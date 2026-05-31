@@ -41,6 +41,87 @@ function setWebData(key: string, data: any[]) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+const WEB_FEEDING_TYPES = ['bottle_breast', 'bottle_formula', 'direct'];
+const WEB_DIAPER_TYPES = ['wet', 'dirty', 'mixed'];
+
+function getWebPrimaryBabyId() {
+  const babies = getWebData('baby_tracker_baby');
+  return typeof babies[0]?.id === 'number' ? babies[0].id : null;
+}
+
+function isIsoDateString(value: unknown) {
+  return typeof value === 'string' && !Number.isNaN(new Date(value).getTime());
+}
+
+function normalizeCorruptedWebRecords() {
+  const data = getWebData('baby_tracker_records');
+  const babyId = getWebPrimaryBabyId();
+
+  if (!babyId) {
+    return;
+  }
+
+  let changed = false;
+  const normalized = data.map((record) => {
+    if (
+      typeof record.baby_id === 'number' &&
+      (record.type === 'feeding' || record.type === 'diaper') &&
+      isIsoDateString(record.created_at)
+    ) {
+      return record;
+    }
+
+    if (WEB_FEEDING_TYPES.includes(record.type)) {
+      changed = true;
+      const originalCreatedAt = isIsoDateString(record.baby_id) ? record.baby_id : new Date().toISOString();
+
+      if (record.type === 'direct') {
+        return {
+          ...record,
+          baby_id: babyId,
+          type: 'feeding',
+          created_at: originalCreatedAt,
+          feeding_type: 'direct',
+          amount_ml: null,
+          duration_min: typeof record.feeding_type === 'number' ? record.feeding_type : null,
+          breast_side: typeof record.amount_ml === 'string' ? record.amount_ml : null,
+          note: typeof record.duration_min === 'string' ? record.duration_min : null,
+        };
+      }
+
+      return {
+        ...record,
+        baby_id: babyId,
+        type: 'feeding',
+        created_at: originalCreatedAt,
+        feeding_type: record.type,
+        amount_ml: typeof record.created_at === 'number' ? record.created_at : null,
+        duration_min: null,
+        breast_side: null,
+        note: typeof record.duration_min === 'string' ? record.duration_min : null,
+      };
+    }
+
+    if (WEB_DIAPER_TYPES.includes(record.type)) {
+      changed = true;
+      return {
+        ...record,
+        baby_id: babyId,
+        type: 'diaper',
+        created_at: isIsoDateString(record.baby_id) ? record.baby_id : new Date().toISOString(),
+        diaper_type: record.type,
+        note: typeof record.created_at === 'string' ? record.created_at : null,
+      };
+    }
+
+    return record;
+  });
+
+  if (changed) {
+    setWebData('baby_tracker_records', normalized);
+  }
+}
+
 function getWebSetting(key: string): string | null {
   try {
     const settings = JSON.parse(localStorage.getItem('baby_tracker_settings') || '{}');
@@ -75,6 +156,7 @@ function getWebAdapter(): DBAdapter {
       if (!localStorage.getItem('baby_tracker_baby')) setWebData('baby_tracker_baby', []);
       if (!localStorage.getItem('baby_tracker_records')) setWebData('baby_tracker_records', []);
       if (!localStorage.getItem('baby_tracker_settings')) localStorage.setItem('baby_tracker_settings', '{}');
+      normalizeCorruptedWebRecords();
     },
     run: async (sql, ...params) => {
       const upperSql = sql.trim().toUpperCase();
@@ -100,30 +182,40 @@ function getWebAdapter(): DBAdapter {
         if (sql.includes('records')) {
           const data = getWebData('baby_tracker_records');
           const id = getNextId('records');
-          const record: any = {
-            id,
-            baby_id: params[0],
-            type: null,
-            created_at: null,
-            feeding_type: null,
-            amount_ml: null,
-            duration_min: null,
-            breast_side: null,
-            diaper_type: null,
-            note: null,
-          };
 
-          // Parse INSERT columns from SQL
-          const colMatch = sql.match(/\(([^)]+)\)\s*VALUES/i);
-          if (colMatch) {
-            const cols = colMatch[1].split(',').map((c: string) => c.trim());
-            cols.forEach((col, i) => {
-              if (params[i + 1] !== undefined) {
-                record[col] = params[i + 1];
-              }
+          if (sql.includes("'feeding'")) {
+            data.push({
+              id,
+              baby_id: params[0],
+              type: 'feeding',
+              created_at: params[1],
+              feeding_type: params[2],
+              amount_ml: params[3] ?? null,
+              duration_min: params[4] ?? null,
+              breast_side: params[5] ?? null,
+              note: params[6] ?? null,
             });
+            setWebData('baby_tracker_records', data);
+            return { lastInsertRowId: id };
           }
-          data.push(record);
+
+          if (sql.includes("'diaper'")) {
+            data.push({
+              id,
+              baby_id: params[0],
+              type: 'diaper',
+              created_at: params[1],
+              feeding_type: null,
+              amount_ml: null,
+              duration_min: null,
+              breast_side: null,
+              diaper_type: params[2],
+              note: params[3] ?? null,
+            });
+            setWebData('baby_tracker_records', data);
+            return { lastInsertRowId: id };
+          }
+
           setWebData('baby_tracker_records', data);
           return { lastInsertRowId: id };
         }
@@ -228,6 +320,7 @@ function getWebAdapter(): DBAdapter {
     },
     getAll: async (sql, ...params) => {
       if (sql.includes('FROM records')) {
+        normalizeCorruptedWebRecords();
         const data = getWebData('baby_tracker_records');
         const babyId = params[0];
         return data

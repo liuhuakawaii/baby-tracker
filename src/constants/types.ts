@@ -41,3 +41,21 @@ export interface AIConfig {
   api_key: string;
   model: string;
 }
+
+export interface AIAnalysisHistoryItem {
+  id: string;
+  created_at: string;
+  summary: {
+    feedings: number;
+    bottleFeedings: number;
+    breastFeedings: number;
+    totalBottleMl: number;
+    diapers: number;
+    wetDiapers: number;
+    dirtyDiapers: number;
+    mixedDiapers: number;
+    nursingMinutes: number;
+  };
+  custom_request?: string;
+  content: string;
+}

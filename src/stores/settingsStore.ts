@@ -5,7 +5,7 @@ import { getDB } from '../db/database';
 const DEFAULT_AI_CONFIG: AIConfig = {
   base_url: 'https://token-plan-sgp.xiaomimimo.com/v1',
   api_key: '',
-  model: 'MiMo',
+  model: 'mimo-v2.5-pro',
 };
 
 interface SettingsState {

@@ -44,6 +44,21 @@ export default function AddScreen() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (params.recordId) {
+      return;
+    }
+
+    setMode('feeding');
+    setFeedingType(null);
+    setAmount('');
+    setDuration('');
+    setBreastSide('both');
+    setFeedingNote('');
+    setDiaperType(null);
+    setDiaperNote('');
+  }, [params.recordId]);
+
+  useEffect(() => {
     if (!editingRecord) {
       return;
     }
@@ -115,7 +130,7 @@ export default function AddScreen() {
 
     setSaving(false);
     resetFeedingDraft();
-    router.navigate('/');
+    router.replace('/');
   };
 
   const handleSaveDiaper = async () => {
@@ -137,7 +152,7 @@ export default function AddScreen() {
 
     setSaving(false);
     resetDiaperDraft();
-    router.navigate('/');
+    router.replace('/');
   };
 
   if (!baby) {

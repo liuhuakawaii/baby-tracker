@@ -1,9 +1,11 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BorderRadius, Colors, Shadows } from '../../src/constants/theme';
 
 export default function TabLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -73,6 +75,12 @@ export default function TabLayout() {
               <Ionicons name="add" size={36} color={Colors.white} />
             </View>
           ),
+        }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+            router.push('/add');
+          },
         }}
       />
       <Tabs.Screen

@@ -121,14 +121,14 @@ export default function SettingsScreen() {
           label="API Key"
           value={apiKey}
           onChangeText={setApiKey}
-          placeholder="\u8f93\u5165\u4f60\u7684 API Key"
+          placeholder="API Key"
           secureTextEntry
         />
         <SettingsField
           label={'\u6a21\u578b'}
           value={model}
           onChangeText={setModel}
-          placeholder="MiMo"
+          placeholder="mimo-v2.5-pro"
         />
 
         <TouchableOpacity style={styles.primaryButton} onPress={handleSave}>
