@@ -17,6 +17,15 @@ export interface DateGroup {
   records: Record[];
 }
 
+export interface CalendarDay {
+  date: Date;
+  dateKey: string;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  recordCount: number;
+}
+
 function toSafeNumber(value: unknown) {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : 0;
@@ -57,6 +66,10 @@ export function formatElapsedSince(iso: string) {
 
 export function getDateKey(iso: string) {
   return iso.split('T')[0];
+}
+
+export function toDateKey(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 export function isSameDate(first: Date, second: Date) {
@@ -107,6 +120,10 @@ export function formatHeroDate() {
   return `${today.getMonth() + 1}\u6708${today.getDate()}\u65e5 ${weekday}`;
 }
 
+export function formatMonthLabel(date: Date) {
+  return `${date.getFullYear()}\u5e74${date.getMonth() + 1}\u6708`;
+}
+
 export function groupRecordsByDate(records: Record[]): DateGroup[] {
   const grouped = new Map<string, Record[]>();
 
@@ -123,9 +140,51 @@ export function groupRecordsByDate(records: Record[]): DateGroup[] {
   }));
 }
 
+export function getRecordsForDateKey(records: Record[], dateKey: string) {
+  return records.filter((record) => getDateKey(record.created_at) === dateKey);
+}
+
 export function getTodayRecords(records: Record[]) {
   const todayKey = getDateKey(new Date().toISOString());
   return records.filter((record) => getDateKey(record.created_at) === todayKey);
+}
+
+export function isDateKeyInMonth(dateKey: string, monthDate: Date) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return (
+    date.getFullYear() === monthDate.getFullYear() &&
+    date.getMonth() === monthDate.getMonth()
+  );
+}
+
+export function getMonthCalendarDays(referenceDate: Date, records: Record[]): CalendarDay[] {
+  const monthStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  const firstDayOffset = (monthStart.getDay() + 6) % 7;
+  const gridStart = new Date(monthStart);
+  gridStart.setDate(monthStart.getDate() - firstDayOffset);
+
+  const recordCountByDate = records.reduce<Map<string, number>>((map, record) => {
+    const dateKey = getDateKey(record.created_at);
+    map.set(dateKey, (map.get(dateKey) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>());
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    const dateKey = toDateKey(date);
+
+    return {
+      date,
+      dateKey,
+      dayNumber: date.getDate(),
+      isCurrentMonth:
+        date.getFullYear() === referenceDate.getFullYear() &&
+        date.getMonth() === referenceDate.getMonth(),
+      isToday: isSameDate(date, new Date()),
+      recordCount: recordCountByDate.get(dateKey) ?? 0,
+    };
+  });
 }
 
 export function buildDailySummary(records: Record[]): DailySummary {

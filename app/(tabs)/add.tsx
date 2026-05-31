@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBabyStore } from '../../src/stores/babyStore';
 import { useRecordStore } from '../../src/stores/recordStore';
 import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/constants/theme';
-import { BreastSide, DiaperType, FeedingType } from '../../src/constants/types';
+import { BreastSide, DiaperType, FeedingType, Record } from '../../src/constants/types';
 import { RecordEntryPanel, RecordMode } from '../../src/components/ui/record-entry-panel';
 
 function sanitizeNumericInput(value: string) {
@@ -14,10 +14,24 @@ function sanitizeNumericInput(value: string) {
 
 export default function AddScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ recordId?: string }>();
   const insets = useSafeAreaInsets();
   const baby = useBabyStore((state) => state.baby);
+  const records = useRecordStore((state) => state.records);
   const addFeeding = useRecordStore((state) => state.addFeeding);
   const addDiaper = useRecordStore((state) => state.addDiaper);
+  const updateFeeding = useRecordStore((state) => state.updateFeeding);
+  const updateDiaper = useRecordStore((state) => state.updateDiaper);
+
+  const editingRecord = useMemo<Record | null>(() => {
+    if (!params.recordId) {
+      return null;
+    }
+
+    const targetId = Number(params.recordId);
+    return records.find((record) => record.id === targetId) ?? null;
+  }, [params.recordId, records]);
+  const isEditing = Boolean(editingRecord);
 
   const [mode, setMode] = useState<RecordMode>('feeding');
   const [feedingType, setFeedingType] = useState<FeedingType | null>(null);
@@ -28,6 +42,33 @@ export default function AddScreen() {
   const [diaperType, setDiaperType] = useState<DiaperType | null>(null);
   const [diaperNote, setDiaperNote] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!editingRecord) {
+      return;
+    }
+
+    if (editingRecord.type === 'feeding') {
+      setMode('feeding');
+      setFeedingType(editingRecord.feeding_type ?? null);
+      setAmount(editingRecord.amount_ml ? String(editingRecord.amount_ml) : '');
+      setDuration(editingRecord.duration_min ? String(editingRecord.duration_min) : '');
+      setBreastSide(editingRecord.breast_side ?? 'both');
+      setFeedingNote(editingRecord.note ?? '');
+      setDiaperType(null);
+      setDiaperNote('');
+      return;
+    }
+
+    setMode('diaper');
+    setDiaperType(editingRecord.diaper_type ?? null);
+    setDiaperNote(editingRecord.note ?? '');
+    setFeedingType(null);
+    setAmount('');
+    setDuration('');
+    setBreastSide('both');
+    setFeedingNote('');
+  }, [editingRecord]);
 
   const canSaveFeeding = useMemo(() => {
     if (!feedingType) {
@@ -53,36 +94,50 @@ export default function AddScreen() {
   };
 
   const handleSaveFeeding = async () => {
-    if (!baby || !feedingType || !canSaveFeeding) {
+    if ((!baby && !isEditing) || !feedingType || !canSaveFeeding) {
       return;
     }
 
     setSaving(true);
-    await addFeeding(baby.id, {
+    const payload = {
       feeding_type: feedingType,
       amount_ml: feedingType === 'direct' ? undefined : Number(sanitizeNumericInput(amount)),
       duration_min: feedingType === 'direct' ? Number(sanitizeNumericInput(duration)) : undefined,
       breast_side: feedingType === 'direct' ? breastSide : undefined,
       note: feedingNote.trim() || undefined,
-    });
+    };
+
+    if (editingRecord) {
+      await updateFeeding(editingRecord.id, payload);
+    } else if (baby) {
+      await addFeeding(baby.id, payload);
+    }
+
     setSaving(false);
-    Alert.alert('已保存', '这条记录已经记下来了。');
     resetFeedingDraft();
+    router.navigate('/');
   };
 
   const handleSaveDiaper = async () => {
-    if (!baby || !diaperType) {
+    if ((!baby && !isEditing) || !diaperType) {
       return;
     }
 
     setSaving(true);
-    await addDiaper(baby.id, {
+    const payload = {
       diaper_type: diaperType,
       note: diaperNote.trim() || undefined,
-    });
+    };
+
+    if (editingRecord) {
+      await updateDiaper(editingRecord.id, payload);
+    } else if (baby) {
+      await addDiaper(baby.id, payload);
+    }
+
     setSaving(false);
-    Alert.alert('已保存', '这条记录已经记下来了。');
     resetDiaperDraft();
+    router.navigate('/');
   };
 
   if (!baby) {
@@ -132,6 +187,7 @@ export default function AddScreen() {
         diaperNote={diaperNote}
         saving={saving}
         canSaveFeeding={canSaveFeeding}
+        isEditing={isEditing}
         onChangeMode={setMode}
         onChangeFeedingType={setFeedingType}
         onChangeAmount={(value) => setAmount(sanitizeNumericInput(value))}
@@ -161,16 +217,17 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.xxxl,
     ...Shadows.card,
   },
   emptyTitle: {
     fontSize: FontSize.xxl,
     lineHeight: 36,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.text,
     marginBottom: Spacing.md,
+    letterSpacing: -0.5,
   },
   emptyDescription: {
     fontSize: FontSize.md,
@@ -179,15 +236,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xxxl,
   },
   primaryButton: {
-    height: 54,
+    height: 58,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.subtle,
   },
   primaryButtonText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.white,
+    letterSpacing: -0.2,
   },
 });

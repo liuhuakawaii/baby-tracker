@@ -139,9 +139,9 @@ function getWebAdapter(): DBAdapter {
           setWebSetting(params[0], params[1]);
           return { lastInsertRowId: 0 };
         }
-        if (sql.includes('baby')) {
-          const data = getWebData('baby_tracker_baby');
-          const idParam = params[params.length - 1];
+      if (sql.includes('baby')) {
+        const data = getWebData('baby_tracker_baby');
+        const idParam = params[params.length - 1];
           const idx = data.findIndex((d: any) => d.id === idParam);
           if (idx >= 0) {
             // Simple: update name, gender, birthday, height, weight
@@ -150,6 +150,34 @@ function getWebAdapter(): DBAdapter {
             }
             setWebData('baby_tracker_baby', data);
           }
+          return { lastInsertRowId: 0 };
+        }
+        if (sql.includes('records')) {
+          const data = getWebData('baby_tracker_records');
+          const idParam = params[params.length - 1];
+          const idx = data.findIndex((d: any) => d.id === idParam);
+
+          if (idx >= 0) {
+            if (sql.includes('feeding_type')) {
+              data[idx] = {
+                ...data[idx],
+                feeding_type: params[0],
+                amount_ml: params[1],
+                duration_min: params[2],
+                breast_side: params[3],
+                note: params[4],
+              };
+            } else if (sql.includes('diaper_type')) {
+              data[idx] = {
+                ...data[idx],
+                diaper_type: params[0],
+                note: params[1],
+              };
+            }
+
+            setWebData('baby_tracker_records', data);
+          }
+
           return { lastInsertRowId: 0 };
         }
       }

@@ -16,6 +16,7 @@ interface RecordEntryPanelProps {
   diaperNote: string;
   saving: boolean;
   canSaveFeeding: boolean;
+  isEditing?: boolean;
   onChangeMode: (mode: RecordMode) => void;
   onChangeFeedingType: (value: FeedingType) => void;
   onChangeAmount: (value: string) => void;
@@ -130,6 +131,7 @@ export function RecordEntryPanel({
   diaperNote,
   saving,
   canSaveFeeding,
+  isEditing = false,
   onChangeMode,
   onChangeFeedingType,
   onChangeAmount,
@@ -143,17 +145,11 @@ export function RecordEntryPanel({
 }: RecordEntryPanelProps) {
   return (
     <View style={styles.panel}>
-      <View style={styles.panelHeader}>
-        <Text style={styles.panelEyebrow}>快速记录</Text>
-        <Text style={styles.panelDescription}>直接切换记录类型，不再经过中间选择页。</Text>
-      </View>
-
       <RecordTypeSwitcher mode={mode} onChange={onChangeMode} />
 
       {mode === 'feeding' ? (
         <View>
           <Text style={styles.sectionTitle}>喂奶记录</Text>
-          <Text style={styles.sectionDescription}>先选喂养方式，再填最必要的信息。</Text>
 
           <View style={styles.segmentRow}>
             {FEEDING_OPTIONS.map((option) => {
@@ -228,13 +224,14 @@ export function RecordEntryPanel({
             disabled={!canSaveFeeding || saving}
             onPress={onSubmitFeeding}
           >
-            <Text style={styles.primaryButtonText}>{saving ? '保存中...' : '保存喂奶记录'}</Text>
+            <Text style={styles.primaryButtonText}>
+              {saving ? '保存中...' : isEditing ? '保存喂奶修改' : '保存喂奶记录'}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View>
           <Text style={styles.sectionTitle}>换尿裤记录</Text>
-          <Text style={styles.sectionDescription}>保留最常用的选项，减少操作步骤。</Text>
 
           <View style={styles.segmentRow}>
             {DIAPER_OPTIONS.map((option) => {
@@ -272,7 +269,9 @@ export function RecordEntryPanel({
             disabled={!diaperType || saving}
             onPress={onSubmitDiaper}
           >
-            <Text style={styles.primaryButtonText}>{saving ? '保存中...' : '保存换尿裤记录'}</Text>
+            <Text style={styles.primaryButtonText}>
+              {saving ? '保存中...' : isEditing ? '保存换尿裤修改' : '保存换尿裤记录'}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -283,59 +282,45 @@ export function RecordEntryPanel({
 const styles = StyleSheet.create({
   panel: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.xl,
     ...Shadows.card,
   },
-  panelHeader: {
-    marginBottom: Spacing.lg,
-  },
-  panelEyebrow: {
-    fontSize: FontSize.sm,
-    fontWeight: '700',
-    color: Colors.primary,
-    marginBottom: 6,
-  },
-  panelDescription: {
-    fontSize: FontSize.sm,
-    lineHeight: 22,
-    color: Colors.textSecondary,
-  },
   switcher: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-    padding: 4,
+    gap: Spacing.md,
+    padding: 6,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.cardMuted,
     marginBottom: Spacing.xl,
   },
   switchButton: {
     flex: 1,
-    minHeight: 56,
+    minHeight: 64,
     borderRadius: BorderRadius.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
   switchButtonActive: {
     backgroundColor: Colors.card,
-    ...Shadows.soft,
+    ...Shadows.subtle,
   },
   iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.backgroundSoft,
   },
   iconWrapActive: {
-    backgroundColor: Colors.cardMuted,
+    backgroundColor: Colors.primaryGlow,
   },
   switchLabel: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
+    fontSize: FontSize.lg,
+    fontWeight: '700',
     color: Colors.textSecondary,
   },
   switchLabelActive: {
@@ -343,98 +328,100 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.text,
-    marginBottom: Spacing.xs,
-  },
-  sectionDescription: {
-    fontSize: FontSize.sm,
-    lineHeight: 22,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
+    letterSpacing: -0.3,
   },
   segmentRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   segmentButton: {
     flex: 1,
-    minHeight: 48,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    minHeight: 52,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.borderLight,
     backgroundColor: Colors.backgroundSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
   segmentButtonActive: {
     backgroundColor: Colors.primarySoft,
     borderColor: Colors.primary,
+    borderWidth: 2,
   },
   diaperSegmentButtonActive: {
     backgroundColor: Colors.accentSoft,
-    borderColor: Colors.success,
+    borderColor: Colors.accent,
+    borderWidth: 2,
   },
   segmentText: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
     fontWeight: '600',
   },
   segmentTextActive: {
     color: Colors.primary,
+    fontWeight: '700',
   },
   diaperSegmentTextActive: {
-    color: Colors.success,
+    color: Colors.accent,
+    fontWeight: '700',
   },
   fieldBlock: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   fieldLabel: {
-    fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontSize: FontSize.md,
+    fontWeight: '700',
     color: Colors.text,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   inputWrap: {
     position: 'relative',
     justifyContent: 'center',
   },
   input: {
-    minHeight: 52,
-    borderRadius: BorderRadius.md,
+    minHeight: 56,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
-    fontSize: FontSize.md,
+    borderWidth: 1.5,
+    borderColor: Colors.borderLight,
+    paddingHorizontal: Spacing.lg,
+    fontSize: FontSize.lg,
     color: Colors.text,
+    fontWeight: '500',
   },
   inputWithSuffix: {
-    paddingRight: 56,
+    paddingRight: 64,
   },
   inputSuffix: {
     position: 'absolute',
-    right: Spacing.md,
-    fontSize: FontSize.sm,
-    fontWeight: '600',
+    right: Spacing.lg,
+    fontSize: FontSize.md,
+    fontWeight: '700',
     color: Colors.textSecondary,
   },
   primaryButton: {
-    height: 54,
+    height: 58,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
+    ...Shadows.subtle,
   },
   primaryButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   primaryButtonText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.white,
+    letterSpacing: -0.2,
   },
 });

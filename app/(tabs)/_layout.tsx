@@ -13,21 +13,21 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors.textTertiary,
         tabBarStyle: {
           position: 'absolute',
-          left: 18,
-          right: 18,
-          bottom: 20,
-          height: 82,
-          paddingTop: 10,
-          paddingBottom: 14,
+          left: 16,
+          right: 16,
+          bottom: 16,
+          height: 88,
+          paddingTop: 12,
+          paddingBottom: 16,
           backgroundColor: Colors.card,
           borderTopWidth: 0,
-          borderRadius: BorderRadius.xl,
+          borderRadius: BorderRadius.xxl,
           ...Shadows.card,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '600',
-          marginTop: 4,
+          fontWeight: '700',
+          marginTop: 6,
         },
         sceneStyle: {
           backgroundColor: Colors.background,
@@ -39,16 +39,16 @@ export default function TabLayout() {
         options={{
           title: '\u9996\u9875',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size + 2} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="analysis"
         options={{
-          title: '\u7edf\u8ba1',
+          title: '\u6708\u5386',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'pie-chart' : 'pie-chart-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={size + 2} color={color} />
           ),
         }}
       />
@@ -60,17 +60,17 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <View
               style={{
-                width: 66,
-                height: 66,
-                borderRadius: 33,
-                backgroundColor: focused ? '#FF5E94' : Colors.primary,
+                width: 70,
+                height: 70,
+                borderRadius: 35,
+                backgroundColor: focused ? '#FF6B8E' : Colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginTop: -26,
-                ...Shadows.card,
+                marginTop: -30,
+                ...Shadows.glow,
               }}
             >
-              <Ionicons name="add" size={34} color={Colors.white} />
+              <Ionicons name="add" size={36} color={Colors.white} />
             </View>
           ),
         }}
@@ -80,7 +80,7 @@ export default function TabLayout() {
         options={{
           title: '\u77e5\u8bc6',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'book' : 'book-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={size + 2} color={color} />
           ),
         }}
       />
@@ -89,7 +89,7 @@ export default function TabLayout() {
         options={{
           title: '\u6211\u7684',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size + 2} color={color} />
           ),
         }}
       />

@@ -93,14 +93,19 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <TouchableOpacity style={styles.profileCard} activeOpacity={0.84} onPress={() => router.push('/baby/profile')}>
-        <View style={styles.profileAvatar}>
-          <Ionicons name="happy-outline" size={28} color={Colors.primary} />
+        <View style={styles.profileAvatarShell}>
+          <View style={styles.profileAvatar}>
+            <Ionicons name="happy-outline" size={26} color={Colors.primary} />
+          </View>
         </View>
         <View style={styles.profileBody}>
+          <Text style={styles.profileEyebrow}>宝宝资料</Text>
           <Text style={styles.profileName}>{baby?.name ?? '\u53bb\u6dfb\u52a0\u5b9d\u5b9d\u8d44\u6599'}</Text>
           <Text style={styles.profileMeta}>{babyInfo}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+        <View style={styles.profileArrowWrap}>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} />
+        </View>
       </TouchableOpacity>
 
       <View style={styles.sectionCard}>
@@ -145,38 +150,67 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
+    borderRadius: BorderRadius.xxl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    ...Shadows.card,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadows.soft,
+  },
+  profileAvatarShell: {
+    width: 72,
+    height: 72,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.cardMuted,
+    marginRight: Spacing.lg,
   },
   profileAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.primarySoft,
-    marginRight: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.primaryGlow,
   },
   profileBody: {
     flex: 1,
   },
-  profileName: {
-    fontSize: FontSize.lg,
+  profileEyebrow: {
+    fontSize: FontSize.xs,
     fontWeight: '700',
+    color: Colors.textTertiary,
+    marginBottom: 6,
+  },
+  profileName: {
+    fontSize: FontSize.xl,
+    fontWeight: '800',
     color: Colors.text,
-    marginBottom: Spacing.xs,
+    marginBottom: 6,
+    letterSpacing: -0.3,
   },
   profileMeta: {
     fontSize: FontSize.sm,
-    lineHeight: 22,
+    lineHeight: 20,
     color: Colors.textSecondary,
+  },
+  profileArrowWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.cardMuted,
+    marginLeft: Spacing.md,
   },
   sectionCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.xl,
     ...Shadows.soft,
   },

@@ -15,14 +15,12 @@ import { useBabyStore } from '../../src/stores/babyStore';
 import { useRecordStore } from '../../src/stores/recordStore';
 import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/constants/theme';
 import {
-  formatDateLabel,
-  formatElapsedSince,
-  formatTime,
-  getRecordPresentation,
+  buildDailySummary,
+  getTodayRecords,
   groupRecordsByDate,
 } from '../../src/utils/records';
-import { RecordIcon } from '../../src/components/ui/record-icons';
-import { HomeHeroCard } from '../../src/components/home/home-hero-card';
+import { TodaySummaryStrip } from '../../src/components/home/today-summary-strip';
+import { RecordDayCard } from '../../src/components/records/record-day-card';
 
 const TEXT = {
   welcome: '\u6b22\u8fce\u6765\u5230\u5b9d\u5b9d\u8bb0\u5f55',
@@ -58,6 +56,7 @@ export default function HomeScreen() {
     const latestFeedingRecord = records.find((record) => record.type === 'feeding');
     return latestFeedingRecord?.id ?? null;
   }, [records]);
+  const todaySummary = useMemo(() => buildDailySummary(getTodayRecords(records)), [records]);
 
   const onRefresh = async () => {
     if (!baby) {
@@ -113,83 +112,58 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <>
-          {baby ? (
-            <HomeHeroCard baby={baby} topInset={insets.top} onPressAI={() => router.push('/ai-analysis')} />
-          ) : null}
+          <View style={{ paddingTop: insets.top + 18 }}>
+            <TodaySummaryStrip summary={todaySummary} />
+          </View>
 
           {records.length === 0 && !recordsLoading ? (
-            <View style={styles.timelineCard}>
-              <Text style={styles.sectionTitle}>{TEXT.timeline}</Text>
+            <View style={styles.timelineEmptyCard}>
+              <View style={styles.timelineSectionHeader}>
+                <View style={styles.timelineSectionTitleRow}>
+                  <View style={styles.timelineSectionAccent} />
+                  <Text style={styles.timelineSectionTitle}>{TEXT.timeline}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.timelineAIButton}
+                  activeOpacity={0.84}
+                  onPress={() => router.push('/ai-analysis')}
+                >
+                  <Ionicons name="sparkles" size={15} color={Colors.primary} />
+                  <Text style={styles.timelineAIButtonText}>AI分析</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.emptyTimelineTitle}>{TEXT.noRecord}</Text>
               <Text style={styles.emptyTimelineDescription}>{TEXT.noRecordDesc}</Text>
             </View>
           ) : (
-            <View style={styles.timelineCard}>
-              <Text style={styles.sectionTitle}>{TEXT.timeline}</Text>
+            <View style={styles.timelineSectionHeader}>
+              <View style={styles.timelineSectionTitleRow}>
+                <View style={styles.timelineSectionAccent} />
+                <Text style={styles.timelineSectionTitle}>{TEXT.timeline}</Text>
+              </View>
+              <View style={styles.timelineHeaderActions}>
+                <Text style={styles.timelineSectionMeta}>{`${records.length} 条记录`}</Text>
+                <TouchableOpacity
+                  style={styles.timelineAIButton}
+                  activeOpacity={0.84}
+                  onPress={() => router.push('/ai-analysis')}
+                >
+                  <Ionicons name="sparkles" size={15} color={Colors.primary} />
+                  <Text style={styles.timelineAIButtonText}>AI分析</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </>
       }
       renderItem={({ item }) => {
-        const dateLabel = formatDateLabel(item.dateKey);
-
         return (
-          <View style={styles.daySection}>
-            <View style={styles.dayHeader}>
-              <View style={styles.dayHeaderLeft}>
-                <Ionicons name="calendar-outline" size={20} color={Colors.textSecondary} />
-                <Text style={styles.dayTitle}>{dateLabel.title}</Text>
-                <Text style={styles.daySubtitle}>{dateLabel.subtitle}</Text>
-              </View>
-            </View>
-
-            {item.records.map((record, index) => {
-              const presentation = getRecordPresentation(record);
-              const showLatestFeedingTip = record.id === latestFeedingRecordId && record.type === 'feeding';
-
-              return (
-                <View key={record.id} style={styles.timelineRow}>
-                  <View style={styles.timelineTimeColumn}>
-                    <Text style={styles.timelineTime}>{formatTime(record.created_at)}</Text>
-                    <View style={styles.timelineTrack}>
-                      <View style={[styles.timelineDot, { backgroundColor: presentation.timelineTint }]} />
-                      {index !== item.records.length - 1 ? <View style={styles.timelineLine} /> : null}
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.timelineItem}
-                    activeOpacity={0.82}
-                    onLongPress={() => deleteRecord(record.id)}
-                  >
-                    <View style={styles.timelineItemContent}>
-                      {showLatestFeedingTip ? (
-                        <View style={styles.tipRow}>
-                          <View style={styles.tipPill}>
-                            <Text style={styles.tipText}>{formatElapsedSince(record.created_at)}</Text>
-                          </View>
-                        </View>
-                      ) : null}
-
-                      <View style={styles.timelineItemMain}>
-                        <View style={[styles.timelineIconWrap, { backgroundColor: presentation.softTint }]}>
-                          <RecordIcon type={presentation.icon} color={presentation.tint} />
-                        </View>
-                        <View style={styles.timelineBody}>
-                          <Text style={styles.timelineItemTitle}>{presentation.title}</Text>
-                          {record.note ? <Text style={styles.timelineNote}>{record.note}</Text> : null}
-                        </View>
-                        <View style={styles.timelineValueWrap}>
-                          <Text style={[styles.timelineValue, { color: presentation.tint }]}>{presentation.value}</Text>
-                          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-          </View>
+          <RecordDayCard
+            dateKey={item.dateKey}
+            records={item.records}
+            latestFeedingRecordId={latestFeedingRecordId}
+            onDeleteRecord={deleteRecord}
+          />
         );
       }}
     />
@@ -201,149 +175,69 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  timelineCard: {
+  timelineSectionHeader: {
     marginHorizontal: Spacing.xl,
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.md,
-    ...Shadows.soft,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  sectionTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  daySection: {
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.md,
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    ...Shadows.soft,
-  },
-  dayHeader: {
-    paddingTop: Spacing.xl,
-    marginBottom: Spacing.lg,
-  },
-  dayHeaderLeft: {
+  timelineSectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  dayTitle: {
+  timelineSectionAccent: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+  },
+  timelineSectionTitle: {
     fontSize: FontSize.xl,
     fontWeight: '700',
     color: Colors.text,
+    letterSpacing: -0.3,
   },
-  daySubtitle: {
-    fontSize: FontSize.lg,
-    color: Colors.primary,
-    fontWeight: '500',
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    marginBottom: Spacing.sm,
-  },
-  timelineTimeColumn: {
-    width: 72,
-    alignItems: 'center',
-    paddingTop: Spacing.lg,
-  },
-  timelineTime: {
-    fontSize: 17,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  timelineTrack: {
-    flex: 1,
-    width: 22,
-    alignItems: 'center',
-    marginTop: Spacing.sm,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  timelineLine: {
-    flex: 1,
-    width: 1,
-    backgroundColor: Colors.border,
-    marginTop: 4,
-  },
-  timelineItem: {
-    flex: 1,
-    minHeight: 88,
-    backgroundColor: Colors.backgroundSoft,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  timelineItemContent: {
-    gap: Spacing.sm,
-  },
-  timelineItemMain: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timelineIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-  },
-  timelineBody: {
-    flex: 1,
-    paddingRight: Spacing.sm,
-  },
-  timelineItemTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  timelineNote: {
+  timelineSectionMeta: {
     fontSize: FontSize.sm,
-    lineHeight: 20,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  tipRow: {
-    flexDirection: 'row',
-  },
-  tipPill: {
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primarySoft,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
-  },
-  tipText: {
-    fontSize: FontSize.xs,
     fontWeight: '600',
-    color: Colors.primary,
+    color: Colors.textTertiary,
   },
-  timelineValueWrap: {
+  timelineHeaderActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
-  timelineValue: {
-    fontSize: 17,
-    fontWeight: '600',
+  timelineAIButton: {
+    height: 34,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primaryGlow,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  timelineAIButtonText: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  timelineEmptyCard: {
+    marginHorizontal: Spacing.xl,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.xxl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.xl,
+    ...Shadows.soft,
   },
   emptyTimelineTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.text,
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
     marginBottom: Spacing.sm,
   },
   emptyTimelineDescription: {
@@ -356,7 +250,7 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.xxl,
     padding: Spacing.xxxl,
     ...Shadows.card,
   },
@@ -368,9 +262,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: FontSize.xxl,
     lineHeight: 38,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.text,
     marginBottom: Spacing.md,
+    letterSpacing: -0.5,
   },
   emptyDescription: {
     fontSize: FontSize.md,

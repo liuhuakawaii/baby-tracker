@@ -19,6 +19,17 @@ interface RecordState {
     note?: string;
     created_at?: string;
   }) => Promise<void>;
+  updateFeeding: (recordId: number, data: {
+    feeding_type: FeedingType;
+    amount_ml?: number;
+    duration_min?: number;
+    breast_side?: BreastSide;
+    note?: string;
+  }) => Promise<void>;
+  updateDiaper: (recordId: number, data: {
+    diaper_type: DiaperType;
+    note?: string;
+  }) => Promise<void>;
   deleteRecord: (id: number) => Promise<void>;
   getTodaySummary: (babyId: number) => Promise<{ feedings: number; total_ml: number; diapers: number }>;
 }
@@ -75,6 +86,60 @@ export const useRecordStore = create<RecordState>((set, get) => ({
       note: data.note,
     };
     set({ records: [newRecord, ...get().records] });
+  },
+
+  updateFeeding: async (recordId, data) => {
+    const db = await getDB();
+    await db.run(
+      `UPDATE records
+       SET feeding_type=?, amount_ml=?, duration_min=?, breast_side=?, note=?
+       WHERE id=?`,
+      data.feeding_type,
+      data.amount_ml ?? null,
+      data.duration_min ?? null,
+      data.breast_side ?? null,
+      data.note ?? null,
+      recordId
+    );
+
+    set({
+      records: get().records.map((record) =>
+        record.id === recordId
+          ? {
+              ...record,
+              feeding_type: data.feeding_type,
+              amount_ml: data.amount_ml,
+              duration_min: data.duration_min,
+              breast_side: data.breast_side,
+              note: data.note,
+            }
+          : record
+      ),
+    });
+  },
+
+  updateDiaper: async (recordId, data) => {
+    const db = await getDB();
+    await db.run(
+      `UPDATE records
+       SET diaper_type=?, note=?
+       WHERE id=?`,
+      data.diaper_type,
+      data.note ?? null,
+      recordId
+    );
+
+    set({
+      records: get().records.map((record) =>
+        record.id === recordId
+          ? {
+              ...record,
+              diaper_type: data.diaper_type,
+              note: data.note,
+            }
+          : record
+      ),
+    });
   },
 
   deleteRecord: async (id) => {
