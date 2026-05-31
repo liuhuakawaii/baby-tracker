@@ -1,5 +1,9 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../constants/theme';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Animation, BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../constants/theme';
 import { BreastSide, DiaperType, FeedingType } from '../../constants/types';
 import { RecordIcon } from './record-icons';
 
@@ -28,6 +32,8 @@ interface RecordEntryPanelProps {
   onSubmitFeeding: () => void;
   onSubmitDiaper: () => void;
 }
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const RECORD_MODE_OPTIONS: Array<{
   mode: RecordMode;
@@ -90,6 +96,45 @@ function RecordFormField({
   );
 }
 
+function SegmentButton({
+  label,
+  active,
+  activeStyle,
+  activeTextStyle,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  activeStyle?: object;
+  activeTextStyle?: object;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+      <AnimatedTouchable
+        style={[styles.segmentButton, active && (activeStyle || styles.segmentButtonActive)]}
+        activeOpacity={0.9}
+        onPressIn={() => {
+          scale.value = withSpring(Animation.pressScale, Animation.springConfig);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, Animation.springConfig);
+        }}
+        onPress={onPress}
+      >
+        <Text style={[styles.segmentText, active && (activeTextStyle || styles.segmentTextActive)]}>
+          {label}
+        </Text>
+      </AnimatedTouchable>
+    </Animated.View>
+  );
+}
+
 function RecordTypeSwitcher({
   mode,
   onChange,
@@ -143,6 +188,14 @@ export function RecordEntryPanel({
   onSubmitFeeding,
   onSubmitDiaper,
 }: RecordEntryPanelProps) {
+  const saveScale = useSharedValue(1);
+  const saveAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: saveScale.value }],
+  }));
+
+  const isFeedingDisabled = !canSaveFeeding || saving;
+  const isDiaperDisabled = !diaperType || saving;
+
   return (
     <View style={styles.panel}>
       <RecordTypeSwitcher mode={mode} onChange={onChangeMode} />
@@ -152,20 +205,14 @@ export function RecordEntryPanel({
           <Text style={styles.sectionTitle}>喂奶记录</Text>
 
           <View style={styles.segmentRow}>
-            {FEEDING_OPTIONS.map((option) => {
-              const active = feedingType === option.value;
-
-              return (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.segmentButton, active && styles.segmentButtonActive]}
-                  activeOpacity={0.84}
-                  onPress={() => onChangeFeedingType(option.value)}
-                >
-                  <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{option.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {FEEDING_OPTIONS.map((option) => (
+              <SegmentButton
+                key={option.value}
+                label={option.label}
+                active={feedingType === option.value}
+                onPress={() => onChangeFeedingType(option.value)}
+              />
+            ))}
           </View>
 
           {feedingType === 'direct' ? (
@@ -182,20 +229,14 @@ export function RecordEntryPanel({
               <View style={styles.fieldBlock}>
                 <Text style={styles.fieldLabel}>喂养侧别</Text>
                 <View style={styles.segmentRow}>
-                  {BREAST_SIDE_OPTIONS.map((option) => {
-                    const active = breastSide === option.value;
-
-                    return (
-                      <TouchableOpacity
-                        key={option.value}
-                        style={[styles.segmentButton, active && styles.segmentButtonActive]}
-                        activeOpacity={0.84}
-                        onPress={() => onChangeBreastSide(option.value)}
-                      >
-                        <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{option.label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {BREAST_SIDE_OPTIONS.map((option) => (
+                    <SegmentButton
+                      key={option.value}
+                      label={option.label}
+                      active={breastSide === option.value}
+                      onPress={() => onChangeBreastSide(option.value)}
+                    />
+                  ))}
                 </View>
               </View>
             </>
@@ -219,42 +260,47 @@ export function RecordEntryPanel({
             onChangeText={onChangeFeedingNote}
           />
 
-          <TouchableOpacity
-            style={[styles.primaryButton, (!canSaveFeeding || saving) && styles.primaryButtonDisabled]}
-            disabled={!canSaveFeeding || saving}
-            onPress={onSubmitFeeding}
-          >
-            <Text style={styles.primaryButtonText}>
-              {saving ? '保存中...' : isEditing ? '保存喂奶修改' : '保存喂奶记录'}
-            </Text>
-          </TouchableOpacity>
+          <Animated.View style={saveAnimatedStyle}>
+            <TouchableOpacity
+              disabled={isFeedingDisabled}
+              activeOpacity={0.9}
+              onPressIn={() => {
+                saveScale.value = withSpring(Animation.pressScale, Animation.springConfig);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }}
+              onPressOut={() => {
+                saveScale.value = withSpring(1, Animation.springConfig);
+              }}
+              onPress={onSubmitFeeding}
+            >
+              <LinearGradient
+                colors={Gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.primaryButton, isFeedingDisabled && styles.primaryButtonDisabled]}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {saving ? '保存中...' : isEditing ? '保存喂奶修改' : '保存喂奶记录'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       ) : (
         <View>
           <Text style={styles.sectionTitle}>换尿裤记录</Text>
 
           <View style={styles.segmentRow}>
-            {DIAPER_OPTIONS.map((option) => {
-              const active = diaperType === option.value;
-
-              return (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.segmentButton,
-                    active && styles.diaperSegmentButtonActive,
-                  ]}
-                  activeOpacity={0.84}
-                  onPress={() => onChangeDiaperType(option.value)}
-                >
-                  <Text
-                    style={[styles.segmentText, active && styles.diaperSegmentTextActive]}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {DIAPER_OPTIONS.map((option) => (
+              <SegmentButton
+                key={option.value}
+                label={option.label}
+                active={diaperType === option.value}
+                activeStyle={styles.diaperSegmentButtonActive}
+                activeTextStyle={styles.diaperSegmentTextActive}
+                onPress={() => onChangeDiaperType(option.value)}
+              />
+            ))}
           </View>
 
           <RecordFormField
@@ -264,15 +310,31 @@ export function RecordEntryPanel({
             onChangeText={onChangeDiaperNote}
           />
 
-          <TouchableOpacity
-            style={[styles.primaryButton, (!diaperType || saving) && styles.primaryButtonDisabled]}
-            disabled={!diaperType || saving}
-            onPress={onSubmitDiaper}
-          >
-            <Text style={styles.primaryButtonText}>
-              {saving ? '保存中...' : isEditing ? '保存换尿裤修改' : '保存换尿裤记录'}
-            </Text>
-          </TouchableOpacity>
+          <Animated.View style={saveAnimatedStyle}>
+            <TouchableOpacity
+              disabled={isDiaperDisabled}
+              activeOpacity={0.9}
+              onPressIn={() => {
+                saveScale.value = withSpring(Animation.pressScale, Animation.springConfig);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }}
+              onPressOut={() => {
+                saveScale.value = withSpring(1, Animation.springConfig);
+              }}
+              onPress={onSubmitDiaper}
+            >
+              <LinearGradient
+                colors={Gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.primaryButton, isDiaperDisabled && styles.primaryButtonDisabled]}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {saving ? '保存中...' : isEditing ? '保存换尿裤修改' : '保存换尿裤记录'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       )}
     </View>
@@ -283,8 +345,10 @@ const styles = StyleSheet.create({
   panel: {
     backgroundColor: Colors.card,
     borderRadius: BorderRadius.xxl,
-    padding: Spacing.xl,
-    ...Shadows.card,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   switcher: {
     flexDirection: 'row',
@@ -339,9 +403,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   segmentButton: {
-    flex: 1,
     minHeight: 52,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     borderWidth: 1.5,
     borderColor: Colors.borderLight,
     backgroundColor: Colors.backgroundSoft,
@@ -387,10 +450,10 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 56,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.backgroundSoft,
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
     paddingHorizontal: Spacing.lg,
     fontSize: FontSize.lg,
     color: Colors.text,
@@ -409,11 +472,10 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 58,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.lg,
-    ...Shadows.subtle,
+    ...Shadows.button,
   },
   primaryButtonDisabled: {
     opacity: 0.4,

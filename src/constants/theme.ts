@@ -31,6 +31,12 @@ export const Colors = {
   shadow: 'rgba(139, 122, 117, 0.06)',
   shadowMedium: 'rgba(139, 122, 117, 0.1)',
   overlay: 'rgba(45, 36, 32, 0.12)',
+  glassBackground: 'rgba(255, 251, 248, 0.72)',
+  glassBorder: 'rgba(255, 255, 255, 0.45)',
+  clayHighlight: 'rgba(255, 255, 255, 0.6)',
+  clayShadowOuter: 'rgba(139, 122, 117, 0.12)',
+  decorativeBlob1: 'rgba(255, 139, 160, 0.08)',
+  decorativeBlob2: 'rgba(157, 212, 195, 0.08)',
 };
 
 export const Spacing = {
@@ -39,17 +45,17 @@ export const Spacing = {
   md: 12,
   lg: 16,
   xl: 20,
-  xxl: 24,
-  xxxl: 32,
-  xxxxl: 40,
+  xxl: 28,
+  xxxl: 36,
+  xxxxl: 44,
 };
 
 export const BorderRadius = {
-  sm: 10,
-  md: 16,
-  lg: 22,
-  xl: 28,
-  xxl: 36,
+  sm: 12,
+  md: 18,
+  lg: 24,
+  xl: 30,
+  xxl: 38,
   full: 999,
 };
 
@@ -63,33 +69,66 @@ export const FontSize = {
   xxxl: 36,
 };
 
+export const Gradients = {
+  primary: ['#FF8BA0', '#FFB88E'] as [string, string],
+  accent: ['#9DD4C3', '#8EC5F7'] as [string, string],
+  softPink: ['#FF8BA0', '#FFCDB4'] as [string, string],
+  warmWhite: ['rgba(255,255,255,0.95)', 'rgba(255,251,248,0.6)'] as [string, string],
+};
+
+export const Glass = {
+  blurIntensity: 80,
+  background: 'rgba(255, 251, 248, 0.72)',
+  border: 'rgba(255, 255, 255, 0.45)',
+  tint: 'light' as const,
+};
+
 export const Shadows = {
   card: {
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 12 },
+    shadowColor: Colors.clayShadowOuter,
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
-    shadowRadius: 24,
+    shadowRadius: 28,
     elevation: 6,
   },
   soft: {
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 1,
-    shadowRadius: 16,
+    shadowRadius: 20,
     elevation: 3,
   },
   subtle: {
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 1,
     shadowRadius: 12,
     elevation: 2,
   },
   glow: {
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 5,
   },
+  clay: {
+    shadowColor: Colors.clayShadowOuter,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 1,
+    shadowRadius: 30,
+    elevation: 8,
+  },
+  button: {
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+};
+
+export const Animation = {
+  springConfig: { damping: 15, stiffness: 400, mass: 0.8 },
+  pressScale: 0.96,
 };

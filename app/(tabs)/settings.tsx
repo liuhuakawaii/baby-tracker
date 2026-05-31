@@ -5,16 +5,21 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBabyStore } from '../../src/stores/babyStore';
 import { useSettingsStore } from '../../src/stores/settingsStore';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/constants/theme';
+import { Animation, BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../src/constants/theme';
 import { getAgeLabel } from '../../src/utils/records';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function SettingsField({
   label,
@@ -57,6 +62,11 @@ export default function SettingsScreen() {
   const [apiKey, setApiKey] = useState(aiConfig.api_key);
   const [model, setModel] = useState(aiConfig.model);
 
+  const saveScale = useSharedValue(1);
+  const saveAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: saveScale.value }],
+  }));
+
   useEffect(() => {
     setBaseUrl(aiConfig.base_url);
     setApiKey(aiConfig.api_key);
@@ -65,10 +75,10 @@ export default function SettingsScreen() {
 
   const babyInfo = useMemo(() => {
     if (!baby) {
-      return '\u8fd8\u6ca1\u6709\u586b\u5199\u5b9d\u5b9d\u8d44\u6599';
+      return '还没有填写宝宝资料';
     }
 
-    return `${getAgeLabel(baby.birthday)} \u00b7 ${baby.weight} kg \u00b7 ${baby.height} cm`;
+    return `${getAgeLabel(baby.birthday)} · ${baby.weight} kg · ${baby.height} cm`;
   }, [baby]);
 
   const handleSave = async () => {
@@ -77,7 +87,7 @@ export default function SettingsScreen() {
       api_key: apiKey.trim(),
       model: model.trim(),
     });
-    Alert.alert('\u5df2\u4fdd\u5b58', 'AI \u914d\u7f6e\u5df2\u7ecf\u66f4\u65b0\u3002');
+    Alert.alert('已保存', 'AI 配置已经更新。');
   };
 
   return (
@@ -94,13 +104,20 @@ export default function SettingsScreen() {
     >
       <TouchableOpacity style={styles.profileCard} activeOpacity={0.84} onPress={() => router.push('/baby/profile')}>
         <View style={styles.profileAvatarShell}>
-          <View style={styles.profileAvatar}>
-            <Ionicons name="happy-outline" size={26} color={Colors.primary} />
-          </View>
+          <LinearGradient
+            colors={Gradients.softPink}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.profileAvatarGradient}
+          >
+            <View style={styles.profileAvatar}>
+              <Ionicons name="happy-outline" size={26} color={Colors.primary} />
+            </View>
+          </LinearGradient>
         </View>
         <View style={styles.profileBody}>
           <Text style={styles.profileEyebrow}>宝宝资料</Text>
-          <Text style={styles.profileName}>{baby?.name ?? '\u53bb\u6dfb\u52a0\u5b9d\u5b9d\u8d44\u6599'}</Text>
+          <Text style={styles.profileName}>{baby?.name ?? '去添加宝宝资料'}</Text>
           <Text style={styles.profileMeta}>{babyInfo}</Text>
         </View>
         <View style={styles.profileArrowWrap}>
@@ -125,15 +142,34 @@ export default function SettingsScreen() {
           secureTextEntry
         />
         <SettingsField
-          label={'\u6a21\u578b'}
+          label="模型"
           value={model}
           onChangeText={setModel}
           placeholder="mimo-v2.5-pro"
         />
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleSave}>
-          <Text style={styles.primaryButtonText}>{'\u4fdd\u5b58 AI \u914d\u7f6e'}</Text>
-        </TouchableOpacity>
+        <Animated.View style={saveAnimatedStyle}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPressIn={() => {
+              saveScale.value = withSpring(Animation.pressScale, Animation.springConfig);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            onPressOut={() => {
+              saveScale.value = withSpring(1, Animation.springConfig);
+            }}
+            onPress={handleSave}
+          >
+            <LinearGradient
+              colors={Gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryButtonText}>保存 AI 配置</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </ScrollView>
   );
@@ -146,7 +182,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.lg,
+    gap: Spacing.xxl,
   },
   profileCard: {
     backgroundColor: Colors.card,
@@ -156,8 +192,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-    ...Shadows.soft,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   profileAvatarShell: {
     width: 72,
@@ -165,8 +201,15 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.cardMuted,
     marginRight: Spacing.lg,
+    ...Shadows.subtle,
+  },
+  profileAvatarGradient: {
+    width: 72,
+    height: 72,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileAvatar: {
     width: 52,
@@ -176,7 +219,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.primarySoft,
     borderWidth: 1.5,
-    borderColor: Colors.primaryGlow,
+    borderColor: Colors.clayHighlight,
   },
   profileBody: {
     flex: 1,
@@ -211,7 +254,9 @@ const styles = StyleSheet.create({
   sectionCard: {
     backgroundColor: Colors.card,
     borderRadius: BorderRadius.xxl,
-    padding: Spacing.xl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.soft,
   },
   sectionTitle: {
@@ -231,10 +276,10 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 52,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1.5,
+    borderColor: Colors.clayHighlight,
     paddingHorizontal: Spacing.md,
     fontSize: FontSize.md,
     color: Colors.text,
@@ -242,10 +287,10 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 54,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.sm,
+    ...Shadows.button,
   },
   primaryButtonText: {
     fontSize: FontSize.lg,

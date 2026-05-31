@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { DailySummary } from '../../utils/records';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../constants/theme';
+import { BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../constants/theme';
 
 interface TodaySummaryStripProps {
   summary: DailySummary;
@@ -27,7 +28,12 @@ function SummaryTile({
 export function TodaySummaryStrip({ summary }: TodaySummaryStripProps) {
   return (
     <View style={styles.outer}>
-      <View style={styles.wrapper}>
+      <LinearGradient
+        colors={Gradients.warmWhite}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.wrapper}
+      >
         <SummaryTile
           label="今日瓶喂"
           value={`${summary.totalBottleMl} ml`}
@@ -43,7 +49,7 @@ export function TodaySummaryStrip({ summary }: TodaySummaryStripProps) {
           value={`${summary.diapers} 次`}
           helper={`尿 ${summary.wetDiapers} · 臭 ${summary.dirtyDiapers}`}
         />
-      </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -51,25 +57,29 @@ export function TodaySummaryStrip({ summary }: TodaySummaryStripProps) {
 const styles = StyleSheet.create({
   outer: {
     marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xxl,
   },
   wrapper: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
     borderRadius: BorderRadius.xxl,
-    backgroundColor: Colors.card,
     flexDirection: 'row',
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.soft,
   },
   tile: {
     flex: 1,
-    minHeight: 88,
+    minHeight: 92,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.cardMuted,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.subtle,
   },
   tileLabel: {
     fontSize: FontSize.xs,

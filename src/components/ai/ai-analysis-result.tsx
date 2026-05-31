@@ -1,6 +1,7 @@
 import Markdown from 'react-native-markdown-display';
 import { StyleSheet, Text, View } from 'react-native';
-import { BorderRadius, Colors, FontSize, Spacing } from '../../constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../constants/theme';
 
 interface AIAnalysisResultProps {
   content: string;
@@ -17,7 +18,12 @@ export function AIAnalysisResult({ content }: AIAnalysisResultProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerAccent} />
+        <LinearGradient
+          colors={Gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerAccent}
+        />
         <View>
           <Text style={styles.eyebrow}>分析结果</Text>
           <Text style={styles.title}>今日护理建议</Text>
@@ -114,10 +120,11 @@ const markdownStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.soft,
   },
   header: {
     flexDirection: 'row',
@@ -129,7 +136,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 42,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
   },
   eyebrow: {
     fontSize: FontSize.xs,
@@ -143,4 +149,3 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
 });
-

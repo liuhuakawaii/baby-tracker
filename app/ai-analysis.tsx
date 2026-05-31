@@ -6,9 +6,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,9 +19,11 @@ import { useAIAnalysisStore } from '../src/stores/aiAnalysisStore';
 import { useBabyStore } from '../src/stores/babyStore';
 import { useRecordStore } from '../src/stores/recordStore';
 import { useSettingsStore } from '../src/stores/settingsStore';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../src/constants/theme';
+import { Animation, BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../src/constants/theme';
 import { requestAIAnalysis } from '../src/utils/aiAnalysis';
 import { buildDailySummary, getTodayRecords } from '../src/utils/records';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function createHistoryId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -50,14 +55,19 @@ export default function AIAnalysisScreen() {
     return Boolean(aiConfig.base_url && aiConfig.api_key && aiConfig.model);
   }, [aiConfig]);
 
+  const analyzeScale = useSharedValue(1);
+  const analyzeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: analyzeScale.value }],
+  }));
+
   const handleAnalyze = async () => {
     if (!baby) {
-      Alert.alert('\u8fd8\u6ca1\u6709\u5b9d\u5b9d\u8d44\u6599', '\u8bf7\u5148\u586b\u5199\u5b9d\u5b9d\u8d44\u6599\uff0c\u518d\u5f00\u59cb AI \u5206\u6790\u3002');
+      Alert.alert('还没有宝宝资料', '请先填写宝宝资料，再开始 AI 分析。');
       return;
     }
 
     if (!hasApiConfig) {
-      Alert.alert('\u8fd8\u6ca1\u6709 AI \u914d\u7f6e', '\u8bf7\u5148\u5728\u201c\u6211\u7684\u201d\u9875\u9762\u5b8c\u6210 API \u914d\u7f6e\u3002');
+      Alert.alert('还没有 AI 配置', '请先在"我的"页面完成 API 配置。');
       return;
     }
 
@@ -88,7 +98,7 @@ export default function AIAnalysisScreen() {
       router.push({ pathname: '/ai-analysis-result', params: { id: resultId } });
     } catch (analysisError) {
       const message =
-        analysisError instanceof Error ? analysisError.message : '\u5206\u6790\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002';
+        analysisError instanceof Error ? analysisError.message : '分析失败，请稍后重试。';
       setError(message);
     } finally {
       setLoading(false);
@@ -117,15 +127,30 @@ export default function AIAnalysisScreen() {
           结合宝宝基础信息和今天的喂奶、排便记录，给出喂养节奏分析、观察重点和可执行建议。
         </Text>
         <View style={styles.introMetaRow}>
-          <View style={styles.introMetaPill}>
+          <LinearGradient
+            colors={[Colors.cardMuted, 'rgba(255,249,245,0.5)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.introMetaPill}
+          >
             <Text style={styles.introMetaText}>{`喂养 ${todaySummary.feedings} 次`}</Text>
-          </View>
-          <View style={styles.introMetaPill}>
+          </LinearGradient>
+          <LinearGradient
+            colors={[Colors.cardMuted, 'rgba(255,249,245,0.5)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.introMetaPill}
+          >
             <Text style={styles.introMetaText}>{`换尿裤 ${todaySummary.diapers} 次`}</Text>
-          </View>
-          <View style={styles.introMetaPill}>
+          </LinearGradient>
+          <LinearGradient
+            colors={[Colors.cardMuted, 'rgba(255,249,245,0.5)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.introMetaPill}
+          >
             <Text style={styles.introMetaText}>{`瓶喂 ${todaySummary.totalBottleMl} ml`}</Text>
-          </View>
+          </LinearGradient>
         </View>
       </View>
 
@@ -147,19 +172,34 @@ export default function AIAnalysisScreen() {
 
       {!hasApiConfig ? (
         <View style={styles.warningCard}>
-          <Text style={styles.warningText}>{'\u8bf7\u5148\u5728\u201c\u6211\u7684\u201d\u9875\u9762\u5b8c\u6210 AI \u914d\u7f6e\u3002'}</Text>
+          <Text style={styles.warningText}>请先在"我的"页面完成 AI 配置。</Text>
         </View>
       ) : null}
 
-      <TouchableOpacity
-        style={[styles.primaryButton, (loading || !hasApiConfig) && styles.primaryButtonDisabled]}
-        activeOpacity={0.86}
-        onPress={handleAnalyze}
-        disabled={loading || !hasApiConfig}
-      >
-        {loading ? <ActivityIndicator color={Colors.white} /> : <Ionicons name="sparkles" size={18} color={Colors.white} />}
-        <Text style={styles.primaryButtonText}>{loading ? '\u5206\u6790\u4e2d...' : '\u5f00\u59cb AI \u5206\u6790'}</Text>
-      </TouchableOpacity>
+      <Animated.View style={analyzeAnimatedStyle}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPressIn={() => {
+            analyzeScale.value = withSpring(Animation.pressScale, Animation.springConfig);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }}
+          onPressOut={() => {
+            analyzeScale.value = withSpring(1, Animation.springConfig);
+          }}
+          onPress={handleAnalyze}
+          disabled={loading || !hasApiConfig}
+        >
+          <LinearGradient
+            colors={loading || !hasApiConfig ? (['#D4D4D4', '#D4D4D4'] as [string, string]) : Gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.primaryButton}
+          >
+            {loading ? <ActivityIndicator color={Colors.white} /> : <Ionicons name="sparkles" size={18} color={Colors.white} />}
+            <Text style={styles.primaryButtonText}>{loading ? '分析中...' : '开始 AI 分析'}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
       {error ? (
         <View style={styles.errorCard}>
@@ -208,7 +248,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.lg,
+    gap: Spacing.xxl,
   },
   backButton: {
     width: 44,
@@ -217,13 +257,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.card,
-    ...Shadows.soft,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.subtle,
   },
   introCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    ...Shadows.soft,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   introTitle: {
     fontSize: FontSize.xl,
@@ -247,7 +291,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.cardMuted,
   },
   introMetaText: {
     fontSize: FontSize.sm,
@@ -256,8 +299,10 @@ const styles = StyleSheet.create({
   },
   customPromptCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.soft,
   },
   customPromptHeader: {
@@ -275,10 +320,10 @@ const styles = StyleSheet.create({
   customPromptInput: {
     minHeight: 72,
     maxHeight: 104,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.backgroundSoft,
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     fontSize: FontSize.md,
@@ -287,7 +332,7 @@ const styles = StyleSheet.create({
   },
   warningCard: {
     backgroundColor: '#FFF4E8',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
   },
   warningText: {
@@ -298,14 +343,11 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 54,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: Spacing.sm,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.55,
+    ...Shadows.button,
   },
   primaryButtonText: {
     fontSize: FontSize.lg,
@@ -314,7 +356,7 @@ const styles = StyleSheet.create({
   },
   errorCard: {
     backgroundColor: '#FFF0F0',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
   },
   errorText: {
@@ -336,15 +378,16 @@ const styles = StyleSheet.create({
   },
   historyItem: {
     minHeight: 68,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
+    ...Shadows.subtle,
   },
   historyContent: {
     flex: 1,
@@ -362,12 +405,12 @@ const styles = StyleSheet.create({
   },
   emptyHistory: {
     minHeight: 64,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.cardMuted,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
   },
   emptyHistoryText: {
     fontSize: FontSize.sm,

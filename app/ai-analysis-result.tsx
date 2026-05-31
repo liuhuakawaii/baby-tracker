@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AIAnalysisResult } from '../src/components/ai/ai-analysis-result';
 import { useAIAnalysisStore } from '../src/stores/aiAnalysisStore';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../src/constants/theme';
+import { BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../src/constants/theme';
 
 function formatResultTime(iso: string) {
   const date = new Date(iso);
@@ -52,9 +54,30 @@ export default function AIAnalysisResultScreen() {
             <Text style={styles.summaryEyebrow}>生成时间</Text>
             <Text style={styles.summaryTitle}>{formatResultTime(result.created_at)}</Text>
             <View style={styles.metaRow}>
-              <Text style={styles.metaText}>{`喂养 ${result.summary.feedings} 次`}</Text>
-              <Text style={styles.metaText}>{`瓶喂 ${result.summary.totalBottleMl} ml`}</Text>
-              <Text style={styles.metaText}>{`尿裤 ${result.summary.diapers} 次`}</Text>
+              <LinearGradient
+                colors={[Colors.cardMuted, 'rgba(255,249,245,0.5)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.metaPill}
+              >
+                <Text style={styles.metaText}>{`喂养 ${result.summary.feedings} 次`}</Text>
+              </LinearGradient>
+              <LinearGradient
+                colors={[Colors.cardMuted, 'rgba(255,249,245,0.5)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.metaPill}
+              >
+                <Text style={styles.metaText}>{`瓶喂 ${result.summary.totalBottleMl} ml`}</Text>
+              </LinearGradient>
+              <LinearGradient
+                colors={[Colors.cardMuted, 'rgba(255,249,245,0.5)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.metaPill}
+              >
+                <Text style={styles.metaText}>{`尿裤 ${result.summary.diapers} 次`}</Text>
+              </LinearGradient>
             </View>
           </View>
 
@@ -80,7 +103,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.lg,
+    gap: Spacing.xxl,
   },
   topBar: {
     flexDirection: 'row',
@@ -94,7 +117,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.card,
-    ...Shadows.soft,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.subtle,
   },
   homeButton: {
     height: 40,
@@ -105,7 +130,8 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.subtle,
   },
   homeButtonText: {
     fontSize: FontSize.sm,
@@ -114,9 +140,11 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    ...Shadows.soft,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   summaryEyebrow: {
     fontSize: FontSize.xs,
@@ -135,19 +163,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.sm,
   },
-  metaText: {
+  metaPill: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.cardMuted,
+  },
+  metaText: {
     fontSize: FontSize.sm,
     fontWeight: '800',
     color: Colors.textSecondary,
   },
   emptyCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.soft,
   },
   emptyTitle: {
@@ -168,6 +199,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.button,
   },
   primaryButtonText: {
     fontSize: FontSize.md,
@@ -175,4 +207,3 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
 });
-

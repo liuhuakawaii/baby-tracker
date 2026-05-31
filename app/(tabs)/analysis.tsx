@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRecordStore } from '../../src/stores/recordStore';
@@ -78,57 +79,59 @@ export default function AnalysisTabScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: insets.top + 18,
-          paddingBottom: insets.bottom + 120,
-        },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.monthHeader}>
-        <TouchableOpacity
-          style={styles.monthNavButton}
-          activeOpacity={0.84}
-          onPress={() => setVisibleMonth((current) => shiftMonth(current, -1))}
-        >
-          <Ionicons name="chevron-back" size={18} color={Colors.text} />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <View style={styles.decorativeBlob} />
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + 18,
+            paddingBottom: insets.bottom + 120,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.monthHeader}>
+          <TouchableOpacity
+            style={styles.monthNavButton}
+            activeOpacity={0.84}
+            onPress={() => setVisibleMonth((current) => shiftMonth(current, -1))}
+          >
+            <Ionicons name="chevron-back" size={18} color={Colors.text} />
+          </TouchableOpacity>
 
-        <View style={styles.monthHeaderText}>
-          <Text style={styles.monthLabel}>{formatMonthLabel(visibleMonth)}</Text>
-          <Text style={styles.monthMeta}>
-            {`${monthRecords.length} 条记录 · 喂奶 ${monthSummary.feedings} 次 · 换尿裤 ${monthSummary.diapers} 次`}
-          </Text>
+          <View style={styles.monthHeaderText}>
+            <Text style={styles.monthLabel}>{formatMonthLabel(visibleMonth)}</Text>
+            <Text style={styles.monthMeta}>
+              {`${monthRecords.length} 条记录 · 喂奶 ${monthSummary.feedings} 次 · 换尿裤 ${monthSummary.diapers} 次`}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.monthNavButton}
+            activeOpacity={0.84}
+            onPress={() => setVisibleMonth((current) => shiftMonth(current, 1))}
+          >
+            <Ionicons name="chevron-forward" size={18} color={Colors.text} />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.monthNavButton}
-          activeOpacity={0.84}
-          onPress={() => setVisibleMonth((current) => shiftMonth(current, 1))}
-        >
-          <Ionicons name="chevron-forward" size={18} color={Colors.text} />
-        </TouchableOpacity>
-      </View>
+        <MonthCalendarGrid
+          days={calendarDays}
+          selectedDateKey={selectedDateKey}
+          onSelectDay={handleSelectDay}
+        />
 
-      <MonthCalendarGrid
-        days={calendarDays}
-        selectedDateKey={selectedDateKey}
-        onSelectDay={handleSelectDay}
-      />
-
-      {selectedDayRecords.length > 0 ? (
-        <RecordDayCard dateKey={selectedDateKey} records={selectedDayRecords} onDeleteRecord={deleteRecord} />
-      ) : (
-        <View style={styles.emptyDayCard}>
-          <Text style={styles.emptyDayTitle}>当天还没有记录</Text>
-          <Text style={styles.emptyDayDescription}>可以切换到其他日期查看，或者回到首页继续添加当天记录。</Text>
-        </View>
-      )}
-    </ScrollView>
+        {selectedDayRecords.length > 0 ? (
+          <RecordDayCard dateKey={selectedDateKey} records={selectedDayRecords} onDeleteRecord={deleteRecord} />
+        ) : (
+          <View style={styles.emptyDayCard}>
+            <Text style={styles.emptyDayTitle}>当天还没有记录</Text>
+            <Text style={styles.emptyDayDescription}>可以切换到其他日期查看，或者回到首页继续添加当天记录。</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -137,9 +140,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  decorativeBlob: {
+    position: 'absolute',
+    top: -40,
+    right: -30,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: Colors.decorativeBlob1,
+  },
   content: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.lg,
+    gap: Spacing.xxl,
   },
   monthHeader: {
     flexDirection: 'row',
@@ -153,6 +165,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.subtle,
   },
   monthHeaderText: {
@@ -171,9 +185,11 @@ const styles = StyleSheet.create({
   },
   emptyDayCard: {
     marginHorizontal: Spacing.xl,
-    padding: Spacing.xl,
+    padding: Spacing.xxl,
     borderRadius: BorderRadius.xxl,
     backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.soft,
   },
   emptyDayTitle: {

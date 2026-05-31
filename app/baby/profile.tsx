@@ -5,15 +5,20 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBabyStore } from '../../src/stores/babyStore';
 import { Gender } from '../../src/constants/types';
-import { BorderRadius, Colors, FontSize, Spacing } from '../../src/constants/theme';
+import { Animation, BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../src/constants/theme';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function ProfileField({
   label,
@@ -56,6 +61,11 @@ export default function BabyProfileScreen() {
   const [weight, setWeight] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const saveScale = useSharedValue(1);
+  const saveAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: saveScale.value }],
+  }));
+
   useEffect(() => {
     if (!baby) {
       return;
@@ -70,12 +80,12 @@ export default function BabyProfileScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('\u8bf7\u5148\u586b\u5199\u540d\u5b57', '\u7ed9\u5b9d\u5b9d\u8d77\u4e00\u4e2a\u65b9\u4fbf\u8bc6\u522b\u7684\u6635\u79f0\u5c31\u53ef\u4ee5\u3002');
+      Alert.alert('请先填写名字', '给宝宝起一个方便识别的昵称就可以。');
       return;
     }
 
     if (!birthday.trim()) {
-      Alert.alert('\u8bf7\u586b\u5199\u751f\u65e5', '\u5efa\u8bae\u4f7f\u7528 YYYY-MM-DD \u683c\u5f0f\u3002');
+      Alert.alert('请填写生日', '建议使用 YYYY-MM-DD 格式。');
       return;
     }
 
@@ -108,30 +118,30 @@ export default function BabyProfileScreen() {
       </TouchableOpacity>
 
       <View style={styles.sectionCard}>
-        <Text style={styles.fieldLabel}>{'\u5b9d\u5b9d\u6027\u522b'}</Text>
+        <Text style={styles.fieldLabel}>宝宝性别</Text>
         <View style={styles.segmentRow}>
           <TouchableOpacity
             style={[styles.segmentButton, gender === 'male' && styles.segmentButtonActive]}
             onPress={() => setGender('male')}
           >
-            <Text style={[styles.segmentText, gender === 'male' && styles.segmentTextActive]}>{'\u7537\u5b9d\u5b9d'}</Text>
+            <Text style={[styles.segmentText, gender === 'male' && styles.segmentTextActive]}>男宝宝</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.segmentButton, gender === 'female' && styles.segmentButtonActive]}
             onPress={() => setGender('female')}
           >
-            <Text style={[styles.segmentText, gender === 'female' && styles.segmentTextActive]}>{'\u5973\u5b9d\u5b9d'}</Text>
+            <Text style={[styles.segmentText, gender === 'female' && styles.segmentTextActive]}>女宝宝</Text>
           </TouchableOpacity>
         </View>
 
         <ProfileField
-          label={'\u5b9d\u5b9d\u6635\u79f0'}
-          placeholder={'\u4f8b\u5982 \u5c0f\u7c73\u3001\u7cd6\u7cd6\u3001\u5b9d\u5b9d'}
+          label="宝宝昵称"
+          placeholder="例如 小米、糖糖、宝宝"
           value={name}
           onChangeText={setName}
         />
         <ProfileField
-          label={'\u751f\u65e5'}
+          label="生日"
           placeholder="YYYY-MM-DD"
           value={birthday}
           onChangeText={setBirthday}
@@ -141,7 +151,7 @@ export default function BabyProfileScreen() {
         <View style={styles.doubleRow}>
           <View style={styles.doubleField}>
             <ProfileField
-              label={'\u8eab\u9ad8'}
+              label="身高"
               placeholder="50"
               value={height}
               onChangeText={setHeight}
@@ -150,7 +160,7 @@ export default function BabyProfileScreen() {
           </View>
           <View style={styles.doubleField}>
             <ProfileField
-              label={'\u4f53\u91cd'}
+              label="体重"
               placeholder="3.5"
               value={weight}
               onChangeText={setWeight}
@@ -159,13 +169,30 @@ export default function BabyProfileScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
-          disabled={saving}
-          onPress={handleSave}
-        >
-          <Text style={styles.primaryButtonText}>{saving ? 'Saving...' : '\u4fdd\u5b58\u8d44\u6599'}</Text>
-        </TouchableOpacity>
+        <Animated.View style={saveAnimatedStyle}>
+          <TouchableOpacity
+            style={[saving && styles.primaryButtonDisabled]}
+            disabled={saving}
+            activeOpacity={0.9}
+            onPressIn={() => {
+              saveScale.value = withSpring(Animation.pressScale, Animation.springConfig);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }}
+            onPressOut={() => {
+              saveScale.value = withSpring(1, Animation.springConfig);
+            }}
+            onPress={handleSave}
+          >
+            <LinearGradient
+              colors={saving ? (['#D4D4D4', '#D4D4D4'] as [string, string]) : Gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryButtonText}>{saving ? 'Saving...' : '保存资料'}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </ScrollView>
   );
@@ -178,7 +205,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.lg,
+    gap: Spacing.xxl,
   },
   backButton: {
     width: 44,
@@ -187,11 +214,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.subtle,
   },
   sectionCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   fieldBlock: {
     marginBottom: Spacing.lg,
@@ -204,10 +237,10 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 52,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1.5,
+    borderColor: Colors.clayHighlight,
     paddingHorizontal: Spacing.md,
     fontSize: FontSize.md,
     color: Colors.text,
@@ -220,9 +253,9 @@ const styles = StyleSheet.create({
   segmentButton: {
     flex: 1,
     minHeight: 48,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: Colors.borderLight,
     backgroundColor: Colors.backgroundSoft,
     alignItems: 'center',
     justifyContent: 'center',
@@ -230,6 +263,7 @@ const styles = StyleSheet.create({
   segmentButtonActive: {
     backgroundColor: Colors.primarySoft,
     borderColor: Colors.primary,
+    borderWidth: 2,
   },
   segmentText: {
     fontSize: FontSize.sm,
@@ -249,10 +283,10 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 54,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.md,
+    ...Shadows.button,
   },
   primaryButtonDisabled: {
     opacity: 0.5,

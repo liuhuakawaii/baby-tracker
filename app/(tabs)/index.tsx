@@ -5,15 +5,18 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBabyStore } from '../../src/stores/babyStore';
 import { useRecordStore } from '../../src/stores/recordStore';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/constants/theme';
+import { Animation, BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../src/constants/theme';
 import {
   buildDailySummary,
   getTodayRecords,
@@ -22,17 +25,51 @@ import {
 import { TodaySummaryStrip } from '../../src/components/home/today-summary-strip';
 import { RecordDayCard } from '../../src/components/records/record-day-card';
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
 const TEXT = {
-  welcome: '\u6b22\u8fce\u6765\u5230\u5b9d\u5b9d\u8bb0\u5f55',
-  emptyTitle: '\u5148\u6dfb\u52a0\u5b9d\u5b9d\u8d44\u6599\uff0c\u518d\u5f00\u59cb\u8bb0\u5f55\u6bcf\u4e00\u5929',
-  emptyDescription: '\u6dfb\u52a0\u5b8c\u6210\u540e\uff0c\u9996\u9875\u4f1a\u76f4\u63a5\u5c55\u793a\u57fa\u672c\u4fe1\u606f\u3001AI \u5206\u6790\u548c\u65f6\u95f4\u7ebf\u3002',
-  addBaby: '\u6dfb\u52a0\u5b9d\u5b9d\u4fe1\u606f',
-  goAI: '\u53bb\u770b AI \u5206\u6790',
-  aiAnalysis: 'AI \u5582\u517b\u5206\u6790',
-  timeline: '\u65f6\u95f4\u7ebf',
-  noRecord: '\u8fd8\u6ca1\u6709\u4efb\u4f55\u8bb0\u5f55',
-  noRecordDesc: '\u70b9\u51fb\u4e0b\u65b9\u4e2d\u95f4\u7684\u52a0\u53f7\uff0c\u5c31\u80fd\u5feb\u901f\u6dfb\u52a0\u5582\u5976\u6216\u6362\u5c3f\u88e4\u3002',
+  welcome: '欢迎来到宝宝记录',
+  emptyTitle: '先添加宝宝资料，再开始记录每一天',
+  emptyDescription: '添加完成后，首页会直接展示基本信息、AI 分析和时间线。',
+  addBaby: '添加宝宝信息',
+  goAI: '去看 AI 分析',
+  aiAnalysis: 'AI 喂养分析',
+  timeline: '时间线',
+  noRecord: '还没有任何记录',
+  noRecordDesc: '点击下方中间的加号，就能快速添加喂奶或换尿裤。',
 };
+
+function GradientButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPressIn={() => {
+          scale.value = withSpring(Animation.pressScale, Animation.springConfig);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, Animation.springConfig);
+        }}
+        onPress={onPress}
+      >
+        <LinearGradient
+          colors={Gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.primaryButton}
+        >
+          <Text style={styles.primaryButtonText}>{label}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -86,9 +123,7 @@ export default function HomeScreen() {
           <Text style={styles.emptyTitle}>{TEXT.emptyTitle}</Text>
           <Text style={styles.emptyDescription}>{TEXT.emptyDescription}</Text>
           <View style={styles.emptyActions}>
-            <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/baby/profile')}>
-              <Text style={styles.primaryButtonText}>{TEXT.addBaby}</Text>
-            </TouchableOpacity>
+            <GradientButton label={TEXT.addBaby} onPress={() => router.push('/baby/profile')} />
             <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/ai-analysis')}>
               <Text style={styles.secondaryButtonText}>{TEXT.goAI}</Text>
             </TouchableOpacity>
@@ -99,74 +134,77 @@ export default function HomeScreen() {
   }
 
   return (
-    <FlatList
-      data={groupedRecords}
-      keyExtractor={(item) => item.dateKey}
-      style={styles.container}
-      contentContainerStyle={{
-        paddingBottom: insets.bottom + 120,
-      }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-      }
-      showsVerticalScrollIndicator={false}
-      ListHeaderComponent={
-        <>
-          <View style={{ paddingTop: insets.top + 18 }}>
-            <TodaySummaryStrip summary={todaySummary} />
-          </View>
+    <View style={styles.container}>
+      <View style={styles.decorativeBlob1} />
+      <View style={styles.decorativeBlob2} />
+      <FlatList
+        data={groupedRecords}
+        keyExtractor={(item) => item.dateKey}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 120,
+        }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <>
+            <View style={{ paddingTop: insets.top + 18 }}>
+              <TodaySummaryStrip summary={todaySummary} />
+            </View>
 
-          {records.length === 0 && !recordsLoading ? (
-            <View style={styles.timelineEmptyCard}>
+            {records.length === 0 && !recordsLoading ? (
+              <View style={styles.timelineEmptyCard}>
+                <View style={styles.timelineSectionHeader}>
+                  <View style={styles.timelineSectionTitleRow}>
+                    <View style={styles.timelineSectionAccent} />
+                    <Text style={styles.timelineSectionTitle}>{TEXT.timeline}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.timelineAIButton}
+                    activeOpacity={0.84}
+                    onPress={() => router.push('/ai-analysis')}
+                  >
+                    <Ionicons name="sparkles" size={15} color={Colors.primary} />
+                    <Text style={styles.timelineAIButtonText}>AI分析</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.emptyTimelineTitle}>{TEXT.noRecord}</Text>
+                <Text style={styles.emptyTimelineDescription}>{TEXT.noRecordDesc}</Text>
+              </View>
+            ) : (
               <View style={styles.timelineSectionHeader}>
                 <View style={styles.timelineSectionTitleRow}>
                   <View style={styles.timelineSectionAccent} />
                   <Text style={styles.timelineSectionTitle}>{TEXT.timeline}</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.timelineAIButton}
-                  activeOpacity={0.84}
-                  onPress={() => router.push('/ai-analysis')}
-                >
-                  <Ionicons name="sparkles" size={15} color={Colors.primary} />
-                  <Text style={styles.timelineAIButtonText}>AI分析</Text>
-                </TouchableOpacity>
+                <View style={styles.timelineHeaderActions}>
+                  <Text style={styles.timelineSectionMeta}>{`${records.length} 条记录`}</Text>
+                  <TouchableOpacity
+                    style={styles.timelineAIButton}
+                    activeOpacity={0.84}
+                    onPress={() => router.push('/ai-analysis')}
+                  >
+                    <Ionicons name="sparkles" size={15} color={Colors.primary} />
+                    <Text style={styles.timelineAIButtonText}>AI分析</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <Text style={styles.emptyTimelineTitle}>{TEXT.noRecord}</Text>
-              <Text style={styles.emptyTimelineDescription}>{TEXT.noRecordDesc}</Text>
-            </View>
-          ) : (
-            <View style={styles.timelineSectionHeader}>
-              <View style={styles.timelineSectionTitleRow}>
-                <View style={styles.timelineSectionAccent} />
-                <Text style={styles.timelineSectionTitle}>{TEXT.timeline}</Text>
-              </View>
-              <View style={styles.timelineHeaderActions}>
-                <Text style={styles.timelineSectionMeta}>{`${records.length} 条记录`}</Text>
-                <TouchableOpacity
-                  style={styles.timelineAIButton}
-                  activeOpacity={0.84}
-                  onPress={() => router.push('/ai-analysis')}
-                >
-                  <Ionicons name="sparkles" size={15} color={Colors.primary} />
-                  <Text style={styles.timelineAIButtonText}>AI分析</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </>
-      }
-      renderItem={({ item }) => {
-        return (
-          <RecordDayCard
-            dateKey={item.dateKey}
-            records={item.records}
-            latestFeedingRecordId={latestFeedingRecordId}
-            onDeleteRecord={deleteRecord}
-          />
-        );
-      }}
-    />
+            )}
+          </>
+        }
+        renderItem={({ item }) => {
+          return (
+            <RecordDayCard
+              dateKey={item.dateKey}
+              records={item.records}
+              latestFeedingRecordId={latestFeedingRecordId}
+              onDeleteRecord={deleteRecord}
+            />
+          );
+        }}
+      />
+    </View>
   );
 }
 
@@ -174,6 +212,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  decorativeBlob1: {
+    position: 'absolute',
+    top: -60,
+    right: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: Colors.decorativeBlob1,
+  },
+  decorativeBlob2: {
+    position: 'absolute',
+    bottom: 120,
+    left: -60,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: Colors.decorativeBlob2,
   },
   timelineSectionHeader: {
     marginHorizontal: Spacing.xl,
@@ -231,6 +287,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
     ...Shadows.soft,
   },
   emptyTimelineTitle: {
@@ -252,7 +310,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderRadius: BorderRadius.xxl,
     padding: Spacing.xxxl,
-    ...Shadows.card,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   emptyOverline: {
     fontSize: FontSize.sm,
@@ -276,9 +336,9 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 54,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.button,
   },
   primaryButtonText: {
     fontSize: FontSize.lg,

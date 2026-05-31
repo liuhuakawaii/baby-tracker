@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { knowledgeCards } from '../../src/constants/content';
 import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/constants/theme';
@@ -20,15 +21,25 @@ export default function KnowledgeScreen() {
     >
       {knowledgeCards.map((card) => (
         <View key={card.id} style={styles.knowledgeCard}>
-          <View style={[styles.categoryPill, { backgroundColor: card.tint }]}>
+          <LinearGradient
+            colors={[card.tint, 'rgba(255,255,255,0.6)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.categoryPill}
+          >
             <Text style={styles.categoryText}>{card.category}</Text>
-          </View>
+          </LinearGradient>
           <Text style={styles.cardTitle}>{card.title}</Text>
           <Text style={styles.cardDescription}>{card.description}</Text>
           <View style={styles.bulletGroup}>
             {card.bullets.map((bullet) => (
               <View key={bullet} style={styles.bulletRow}>
-                <View style={styles.bulletDot} />
+                <LinearGradient
+                  colors={['#FF8BA0', '#FFB88E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.bulletDot}
+                />
                 <Text style={styles.bulletText}>{bullet}</Text>
               </View>
             ))}
@@ -46,13 +57,15 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.lg,
+    gap: Spacing.xxl,
   },
   knowledgeCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    ...Shadows.card,
+    borderRadius: BorderRadius.xxl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   categoryPill: {
     alignSelf: 'flex-start',
@@ -91,7 +104,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.primary,
     marginTop: 7,
   },
   bulletText: {

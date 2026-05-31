@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBabyStore } from '../../src/stores/babyStore';
 import { useRecordStore } from '../../src/stores/recordStore';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/constants/theme';
+import { Animation, BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../src/constants/theme';
 import { BreastSide, DiaperType, FeedingType, Record } from '../../src/constants/types';
 import { RecordEntryPanel, RecordMode } from '../../src/components/ui/record-entry-panel';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function sanitizeNumericInput(value: string) {
   return value.replace(/[^\d]/g, '');
@@ -171,9 +177,7 @@ export default function AddScreen() {
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>先创建宝宝资料</Text>
           <Text style={styles.emptyDescription}>填写完成后，记录页和 AI 分析功能都会一起可用。</Text>
-          <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/baby/profile')}>
-            <Text style={styles.primaryButtonText}>去填写资料</Text>
-          </TouchableOpacity>
+          <GradientButton label="去填写资料" onPress={() => router.push('/baby/profile')} />
         </View>
       </ScrollView>
     );
@@ -218,6 +222,38 @@ export default function AddScreen() {
   );
 }
 
+function GradientButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPressIn={() => {
+          scale.value = withSpring(Animation.pressScale, Animation.springConfig);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, Animation.springConfig);
+        }}
+        onPress={onPress}
+      >
+        <LinearGradient
+          colors={Gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.primaryButton}
+        >
+          <Text style={styles.primaryButtonText}>{label}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -234,7 +270,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderRadius: BorderRadius.xxl,
     padding: Spacing.xxxl,
-    ...Shadows.card,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   emptyTitle: {
     fontSize: FontSize.xxl,
@@ -253,10 +291,9 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 58,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.subtle,
+    ...Shadows.button,
   },
   primaryButtonText: {
     fontSize: FontSize.lg,

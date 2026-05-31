@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Record } from '../../constants/types';
-import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../constants/theme';
+import { Animation, BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../constants/theme';
 import { formatDateLabel, formatElapsedSince, formatTime, getRecordPresentation } from '../../utils/records';
 import { RecordIcon } from '../ui/record-icons';
 
@@ -13,13 +16,86 @@ interface RecordDayCardProps {
   onDeleteRecord?: (id: number) => void;
 }
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+function TimelineItem({
+  record,
+  isLast,
+  showLatestFeedingTip,
+  onDeleteRecord,
+}: {
+  record: Record;
+  isLast: boolean;
+  showLatestFeedingTip: boolean;
+  onDeleteRecord?: (id: number) => void;
+}) {
+  const router = useRouter();
+  const presentation = getRecordPresentation(record);
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <View style={styles.timelineRow}>
+      <View style={styles.timelineTimeColumn}>
+        <Text style={styles.timelineTime}>{formatTime(record.created_at)}</Text>
+        <View style={styles.timelineTrack}>
+          <View style={[styles.timelineDot, { backgroundColor: presentation.timelineTint }]} />
+          {!isLast ? <View style={styles.timelineLine} /> : null}
+        </View>
+      </View>
+
+      <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+        <AnimatedTouchable
+          style={styles.timelineItem}
+          activeOpacity={0.9}
+          onPressIn={() => {
+            scale.value = withSpring(Animation.pressScale, Animation.springConfig);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          onPressOut={() => {
+            scale.value = withSpring(1, Animation.springConfig);
+          }}
+          onPress={() => router.push({ pathname: '/add', params: { recordId: String(record.id) } })}
+          onLongPress={onDeleteRecord ? () => onDeleteRecord(record.id) : undefined}
+        >
+          <View style={styles.timelineItemContent}>
+            {showLatestFeedingTip ? (
+              <View style={styles.tipRow}>
+                <View style={styles.tipPill}>
+                  <Text style={styles.tipText}>{formatElapsedSince(record.created_at)}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.timelineItemMain}>
+              <View style={[styles.timelineIconWrap, { backgroundColor: presentation.softTint }]}>
+                <RecordIcon type={presentation.icon} color={presentation.tint} />
+              </View>
+              <View style={styles.timelineBody}>
+                <Text style={styles.timelineItemTitle}>{presentation.title}</Text>
+                {record.note ? <Text style={styles.timelineNote}>{record.note}</Text> : null}
+              </View>
+              <View style={styles.timelineValueWrap}>
+                <Text style={[styles.timelineValue, { color: presentation.tint }]}>{presentation.value}</Text>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+              </View>
+            </View>
+          </View>
+        </AnimatedTouchable>
+      </Animated.View>
+    </View>
+  );
+}
+
 export function RecordDayCard({
   dateKey,
   records,
   latestFeedingRecordId = null,
   onDeleteRecord,
 }: RecordDayCardProps) {
-  const router = useRouter();
   const dateLabel = formatDateLabel(dateKey);
 
   return (
@@ -33,50 +109,16 @@ export function RecordDayCard({
       </View>
 
       {records.map((record, index) => {
-        const presentation = getRecordPresentation(record);
         const showLatestFeedingTip = record.id === latestFeedingRecordId && record.type === 'feeding';
 
         return (
-          <View key={record.id} style={styles.timelineRow}>
-            <View style={styles.timelineTimeColumn}>
-              <Text style={styles.timelineTime}>{formatTime(record.created_at)}</Text>
-              <View style={styles.timelineTrack}>
-                <View style={[styles.timelineDot, { backgroundColor: presentation.timelineTint }]} />
-                {index !== records.length - 1 ? <View style={styles.timelineLine} /> : null}
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.timelineItem}
-              activeOpacity={0.82}
-              onPress={() => router.push({ pathname: '/add', params: { recordId: String(record.id) } })}
-              onLongPress={onDeleteRecord ? () => onDeleteRecord(record.id) : undefined}
-            >
-              <View style={styles.timelineItemContent}>
-                {showLatestFeedingTip ? (
-                  <View style={styles.tipRow}>
-                    <View style={styles.tipPill}>
-                      <Text style={styles.tipText}>{formatElapsedSince(record.created_at)}</Text>
-                    </View>
-                  </View>
-                ) : null}
-
-                <View style={styles.timelineItemMain}>
-                  <View style={[styles.timelineIconWrap, { backgroundColor: presentation.softTint }]}>
-                    <RecordIcon type={presentation.icon} color={presentation.tint} />
-                  </View>
-                  <View style={styles.timelineBody}>
-                    <Text style={styles.timelineItemTitle}>{presentation.title}</Text>
-                    {record.note ? <Text style={styles.timelineNote}>{record.note}</Text> : null}
-                  </View>
-                  <View style={styles.timelineValueWrap}>
-                    <Text style={[styles.timelineValue, { color: presentation.tint }]}>{presentation.value}</Text>
-                    <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TimelineItem
+            key={record.id}
+            record={record}
+            isLast={index === records.length - 1}
+            showLatestFeedingTip={showLatestFeedingTip}
+            onDeleteRecord={onDeleteRecord}
+          />
         );
       })}
     </View>
@@ -86,12 +128,14 @@ export function RecordDayCard({
 const styles = StyleSheet.create({
   daySection: {
     marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xxl,
     paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.lg,
     backgroundColor: Colors.card,
     borderRadius: BorderRadius.xxl,
-    ...Shadows.soft,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.clay,
   },
   dayHeader: {
     paddingTop: Spacing.xl,
@@ -146,12 +190,11 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   timelineItem: {
-    flex: 1,
     minHeight: 76,
     backgroundColor: Colors.backgroundSoft,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.clayHighlight,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     marginBottom: Spacing.xs,

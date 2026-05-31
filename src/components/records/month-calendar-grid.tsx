@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CalendarDay } from '../../utils/records';
-import { BorderRadius, Colors, FontSize, Spacing } from '../../constants/theme';
+import { BorderRadius, Colors, FontSize, Gradients, Shadows, Spacing } from '../../constants/theme';
 
 interface MonthCalendarGridProps {
   days: CalendarDay[];
@@ -31,47 +32,66 @@ export function MonthCalendarGrid({
 
           return (
             <View key={day.dateKey} style={styles.dayCell}>
-              <TouchableOpacity
-                style={[
-                  styles.dayButton,
-                  !day.isCurrentMonth && styles.dayButtonMuted,
-                  isSelected && styles.dayButtonSelected,
-                  day.isToday && !isSelected && styles.dayButtonToday,
-                ]}
-                activeOpacity={0.84}
-                onPress={() => onSelectDay(day)}
-              >
-                <Text
+              {isSelected ? (
+                <LinearGradient
+                  colors={Gradients.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={[
-                    styles.dayNumber,
-                    !day.isCurrentMonth && styles.dayNumberMuted,
-                    isSelected && styles.dayNumberSelected,
-                    day.isToday && !isSelected && styles.dayNumberToday,
+                    styles.dayButton,
+                    !day.isCurrentMonth && styles.dayButtonMuted,
                   ]}
                 >
-                  {day.dayNumber}
-                </Text>
-
-                {day.recordCount > 0 ? (
-                  <View
+                  <TouchableOpacity
+                    style={styles.dayButtonInner}
+                    activeOpacity={0.84}
+                    onPress={() => onSelectDay(day)}
+                  >
+                    <Text style={[styles.dayNumber, styles.dayNumberSelected]}>
+                      {day.dayNumber}
+                    </Text>
+                    {day.recordCount > 0 ? (
+                      <View style={[styles.recordBadge, styles.recordBadgeSelected]}>
+                        <Text style={[styles.recordBadgeText, styles.recordBadgeTextSelected]}>
+                          {day.recordCount}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={styles.recordDotPlaceholder} />
+                    )}
+                  </TouchableOpacity>
+                </LinearGradient>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.dayButton,
+                    !day.isCurrentMonth && styles.dayButtonMuted,
+                    day.isToday && styles.dayButtonToday,
+                  ]}
+                  activeOpacity={0.84}
+                  onPress={() => onSelectDay(day)}
+                >
+                  <Text
                     style={[
-                      styles.recordBadge,
-                      isSelected && styles.recordBadgeSelected,
+                      styles.dayNumber,
+                      !day.isCurrentMonth && styles.dayNumberMuted,
+                      day.isToday && styles.dayNumberToday,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.recordBadgeText,
-                        isSelected && styles.recordBadgeTextSelected,
-                      ]}
-                    >
-                      {day.recordCount}
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.recordDotPlaceholder} />
-                )}
-              </TouchableOpacity>
+                    {day.dayNumber}
+                  </Text>
+
+                  {day.recordCount > 0 ? (
+                    <View style={styles.recordBadge}>
+                      <Text style={styles.recordBadgeText}>
+                        {day.recordCount}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.recordDotPlaceholder} />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           );
         })}
@@ -83,10 +103,13 @@ export function MonthCalendarGrid({
 const styles = StyleSheet.create({
   wrapper: {
     marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xxl,
     padding: Spacing.lg,
     borderRadius: BorderRadius.xxl,
     backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.clayHighlight,
+    ...Shadows.soft,
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -119,15 +142,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Spacing.sm,
   },
+  dayButtonInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
   dayButtonMuted: {
     opacity: 0.35,
   },
-  dayButtonSelected: {
-    backgroundColor: Colors.primary,
-  },
   dayButtonToday: {
-    borderWidth: 1,
-    borderColor: Colors.primarySoft,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 139, 160, 0.3)',
   },
   dayNumber: {
     fontSize: FontSize.md,
@@ -151,6 +177,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.primaryGlow,
+    ...Shadows.subtle,
   },
   recordBadgeSelected: {
     backgroundColor: 'rgba(255,255,255,0.22)',
