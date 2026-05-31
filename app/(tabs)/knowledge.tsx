@@ -18,10 +18,6 @@ export default function KnowledgeScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>{'\u77e5\u8bc6'}</Text>
-      </View>
-
       {knowledgeCards.map((card) => (
         <View key={card.id} style={styles.knowledgeCard}>
           <View style={[styles.categoryPill, { backgroundColor: card.tint }]}>
@@ -51,15 +47,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
-  },
-  header: {
-    gap: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.xxl,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: Colors.text,
   },
   knowledgeCard: {
     backgroundColor: Colors.card,

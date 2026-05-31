@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useBabyStore } from '../src/stores/babyStore';
@@ -85,6 +86,7 @@ ${recentLines || '\u6682\u65e0\u8bb0\u5f55'}
 }
 
 export default function AIAnalysisScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const baby = useBabyStore((state) => state.baby);
   const records = useRecordStore((state) => state.records);
@@ -207,9 +209,9 @@ export default function AIAnalysisScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>AI</Text>
-      </View>
+      <TouchableOpacity style={styles.backButton} activeOpacity={0.78} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={20} color={Colors.text} />
+      </TouchableOpacity>
 
       {!hasApiConfig ? (
         <View style={styles.warningCard}>
@@ -251,14 +253,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
   },
-  header: {
-    gap: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.xxl,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: Colors.text,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+    ...Shadows.soft,
   },
   warningCard: {
     backgroundColor: '#FFF4E8',

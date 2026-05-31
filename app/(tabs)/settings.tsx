@@ -92,10 +92,6 @@ export default function SettingsScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>{'\u6211\u7684'}</Text>
-      </View>
-
       <TouchableOpacity style={styles.profileCard} activeOpacity={0.84} onPress={() => router.push('/baby/profile')}>
         <View style={styles.profileAvatar}>
           <Ionicons name="happy-outline" size={28} color={Colors.primary} />
@@ -146,15 +142,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
-  },
-  header: {
-    gap: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.xxl,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: Colors.text,
   },
   profileCard: {
     backgroundColor: Colors.card,

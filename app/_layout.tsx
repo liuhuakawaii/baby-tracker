@@ -28,20 +28,14 @@ export default function RootLayout() {
           name="baby/profile"
           options={{
             presentation: 'modal',
-            headerShown: true,
-            headerTitle: '\u5b9d\u5b9d\u8d44\u6599',
-            headerStyle: { backgroundColor: Colors.background },
-            headerTintColor: Colors.text,
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="ai-analysis"
           options={{
             presentation: 'card',
-            headerShown: true,
-            headerTitle: 'AI \u5582\u517b\u5206\u6790',
-            headerStyle: { backgroundColor: Colors.background },
-            headerTintColor: Colors.text,
+            headerShown: false,
           }}
         />
       </Stack>

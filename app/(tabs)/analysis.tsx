@@ -58,14 +58,13 @@ export default function AnalysisTabScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>{'\u7edf\u8ba1'}</Text>
-        {baby ? (
+      {baby ? (
+        <View style={styles.metaRow}>
           <View style={styles.agePill}>
             <Text style={styles.agePillText}>{getAgeLabel(baby.birthday)}</Text>
           </View>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       <View style={styles.heroCard}>
         <Text style={styles.heroDescription}>{summaryText}</Text>
@@ -104,16 +103,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
   },
-  header: {
+  metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: FontSize.xxl,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: Colors.text,
+    justifyContent: 'flex-end',
   },
   agePill: {
     borderRadius: BorderRadius.full,

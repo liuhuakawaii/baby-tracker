@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBabyStore } from '../../src/stores/babyStore';
 import { Gender } from '../../src/constants/types';
@@ -102,9 +103,9 @@ export default function BabyProfileScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>{'\u5b9d\u5b9d\u8d44\u6599'}</Text>
-      </View>
+      <TouchableOpacity style={styles.backButton} activeOpacity={0.78} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={20} color={Colors.text} />
+      </TouchableOpacity>
 
       <View style={styles.sectionCard}>
         <Text style={styles.fieldLabel}>{'\u5b9d\u5b9d\u6027\u522b'}</Text>
@@ -179,14 +180,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     gap: Spacing.lg,
   },
-  header: {
-    gap: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.xxl,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: Colors.text,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
   },
   sectionCard: {
     backgroundColor: Colors.card,

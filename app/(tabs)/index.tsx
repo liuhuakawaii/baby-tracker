@@ -17,13 +17,12 @@ import { BorderRadius, Colors, FontSize, Shadows, Spacing } from '../../src/cons
 import {
   formatDateLabel,
   formatElapsedSince,
-  formatHeroDate,
   formatTime,
-  getAgeLabel,
   getRecordPresentation,
   groupRecordsByDate,
 } from '../../src/utils/records';
 import { RecordIcon } from '../../src/components/ui/record-icons';
+import { HomeHeroCard } from '../../src/components/home/home-hero-card';
 
 const TEXT = {
   welcome: '\u6b22\u8fce\u6765\u5230\u5b9d\u5b9d\u8bb0\u5f55',
@@ -114,28 +113,9 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <>
-          <View style={[styles.profileCard, { paddingTop: insets.top + 18 }]}>
-            <View style={styles.profileMain}>
-              <View style={styles.profileText}>
-                <Text style={styles.profileName}>{baby?.name ?? '\u5b9d\u5b9d'}</Text>
-                <Text style={styles.profileDate}>{formatHeroDate()}</Text>
-                {baby ? (
-                  <Text style={styles.profileMeta}>
-                    {`${getAgeLabel(baby.birthday)} \u00b7 ${baby.weight} kg \u00b7 ${baby.height} cm`}
-                  </Text>
-                ) : null}
-              </View>
-
-              <TouchableOpacity
-                style={styles.aiButton}
-                activeOpacity={0.86}
-                onPress={() => router.push('/ai-analysis')}
-              >
-                <Ionicons name="sparkles" size={18} color={Colors.white} />
-                <Text style={styles.aiButtonText}>{TEXT.aiAnalysis}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {baby ? (
+            <HomeHeroCard baby={baby} topInset={insets.top} onPressAI={() => router.push('/ai-analysis')} />
+          ) : null}
 
           {records.length === 0 && !recordsLoading ? (
             <View style={styles.timelineCard}>
@@ -220,49 +200,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  profileCard: {
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.card,
-    ...Shadows.card,
-  },
-  profileMain: {
-    gap: Spacing.lg,
-  },
-  profileText: {
-    gap: Spacing.xs,
-  },
-  profileName: {
-    fontSize: FontSize.xxl,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  profileDate: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  profileMeta: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-  aiButton: {
-    height: 44,
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  aiButtonText: {
-    fontSize: FontSize.sm,
-    fontWeight: '700',
-    color: Colors.white,
   },
   timelineCard: {
     marginHorizontal: Spacing.xl,
